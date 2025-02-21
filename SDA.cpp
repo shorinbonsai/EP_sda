@@ -19,30 +19,7 @@
  * @param initState The initial state of the SDA (default value is 0).
  * @param verbose Whether or not you want text feedback from the SDA (default value is false).
  */
-// SDA::SDA(int numStates, int numChars, int maxRespLen, int outputLen, int initState, bool verbose) {
-//     initChar = -1;
-//     this->numStates = numStates;
-//     this->initState = initState;
-//     this->numChars = numChars;
-//     this->maxRespLen = maxRespLen;
-//     this->outputLen = outputLen;
-//     this->verbose = verbose;
 
-//     transitions.reserve(numStates);
-//     for (vector<int> v: transitions) {
-//         v.reserve(numChars);
-//     }
-
-//     responses.reserve(numStates);
-//     for (vector<vector<int> > vec1: responses) {
-//         vec1.reserve(numChars);
-//         for (vector<int> vec2: vec1) {
-//             vec2.reserve(maxRespLen);
-//         }
-//     }
-//     create();
-//     if (verbose) cout << "SDA made with " << numStates << " states." << endl;
-// }
 // Updated constructor to include maxStates
 SDA::SDA(int numStates, int numChars, int maxRespLen, int outputLen, int initState, bool verbose, int maxStates)
 {

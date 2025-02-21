@@ -5,25 +5,17 @@
 
 const int BOUTS_PER_INDIVIDUAL = 10;
 
-struct Individual
-{
-    SDA sda;
-    int hammingFitness;
-    int boutWins;
-    // double relativeFitness;
-};
 
-vector<Individual> calculateRelativeFiteness(vector<SDA> &population, const vector<int> &target, unsigned seed = 0)
+
+vector<Individual> calculateRelativeFiteness(vector<Individual> &population, const vector<int> &target, unsigned seed = 0)
 {
     vector<Individual> individuals;
     individuals.reserve(population.size());
-    for (SDA &sda : population)
+    for (Individual &indiv : population)
     {
-        Individual individual;
-        individual.sda = sda;
-        individual.hammingFitness = hammingFitness(sda, target);
-        individual.boutWins = 0;
-        individuals.push_back(individual);
+        indiv.hammingFitness = hammingFitness(indiv.sda, target);
+        indiv.boutWins = 0;
+        individuals.push_back(indiv);
     }
 
     // Setup random number generator with provided seed or time-based seed
@@ -76,20 +68,30 @@ Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens, o
     this->numChars = numChars;
     this->popSize = popSize;
     this->boutSize = boutSize;
-    SDA *currentPop, *newPop;
-    currentPop = new SDA[popSize];
-    newPop = new SDA[popSize * 2];
+    // SDA *currentPop, *newPop;
+    Individual *currentPop;
+    currentPop = new Individual[popSize];
+    
     initFits.reserve(popSize);
     // init population
     for (int i = 0; i < popSize; ++i)
     {
-        currentPop[i] = SDA(SDANumStates, numChars, responseLength, SDAOutputLen);
-        newPop[i].copy(currentPop[i]);
-        initFits.push_back(hammingFitness(currentPop[i], sequence));
-        // TODO: calculate init fitness
+        SDA newSDA = SDA(SDANumStates, numChars, responseLength, SDAOutputLen);
+        Individual newInd;
+        newInd.hammingFitness =  hammingFitness(newSDA, sequence);
+        newInd.boutWins = 0;
+        currentPop[i] = newInd;
+        newPop[i] = currentPop[i];
+        initFits.push_back(currentPop[i].hammingFitness);
+        
     }
     // Evolve(SDANumStates, SDAOutputLen, numGens, MyFile);
 }
+
+/**
+ * Destructor.
+ */
+Ep::~Ep() = default;
 
 double fitness(SDA &sda, vector<int> &sequence)
 {
@@ -135,6 +137,8 @@ double hammingFitness(SDA &sda, const vector<int> &sequence)
 
 int Ep::Evolve(vector<SDA> &population, const vector<int> &target, int numGens, ostream &MyFile, unsigned seed = 0)
 {
+    
+    newPop = new Individual[popSize * 2];
 
     MyFile << "Initial Fitness: " << endl;
     printPopFits(MyFile, initFits);
