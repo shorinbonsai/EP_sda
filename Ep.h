@@ -42,7 +42,7 @@ class Ep {
   mt19937 rng;
 
   vector<double> initFits;
-  vector<double> runningFits;
+  vector<double> currentFits;
   vector<double> newGenFits;
   vector<Individual> currentPop;
   vector<Individual> newPop;

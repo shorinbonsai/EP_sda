@@ -81,7 +81,7 @@ Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens,
   newPop.reserve(popSize * 2);
 
   initFits.reserve(popSize);
-  runningFits.reserve(popSize);
+  currentFits.reserve(popSize);
   newGenFits.reserve(popSize * 2);
   // init population
   for (int i = 0; i < popSize; ++i) {
@@ -90,10 +90,10 @@ Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens,
     newInd.hammingFitness = hammingFitness(newSDA, sequence);
     newInd.boutWins = 0;
     currentPop.push_back(newInd);
-    initFits.push_back(currentPop[i].hammingFitness);
+    initFits.push_back(newInd.hammingFitness);
   }
   newPop = currentPop;
-  runningFits = initFits;
+  currentFits = initFits;
   Evolve(currentPop, sequence, numGens, MyFile);
 }
 
@@ -127,6 +127,25 @@ int Ep::printPopFits(ostream &outStrm, vector<double> &popFits) {
   return 0;
 }
 
+/**
+ * Selects the top 50% of individuals based on tournament wins.
+ *
+ * @param individuals Vector of evaluated individuals
+ * @return Selected individuals (50% of original population)
+ */
+vector<Individual> selectByRank(vector<Individual> &individuals) {
+  // Select top 50%
+  int selectionSize = individuals.size() / 2;
+  vector<Individual> selected(individuals.begin(),
+                              individuals.begin() + selectionSize);
+
+  //   cout << "Rank Selection: Selected " << selected.size() << "
+  //   individuals\n"; cout << "Top individual has " << selected[0].boutWins <<
+  //   " wins\n";
+
+  return selected;
+}
+
 int Ep::Evolve(vector<Individual> currentPop, const vector<int> &target,
                int numGens, ostream &MyFile) {
   MyFile << "Initial Fitness: " << endl;
@@ -136,68 +155,30 @@ int Ep::Evolve(vector<Individual> currentPop, const vector<int> &target,
   newGenFits.reserve(popSize * 2);
   // Evolution
   for (int i = 0; i < numGens; ++i) {
+    newPop.clear();
+    newPop = currentPop;
+    for (int j = 0; j < popSize; j++) {
+      Individual ind = currentPop[j];
+      Individual newInd = ind;
+      newInd.sda.mutate(1);
+      newPop.push_back(newInd);
+    }
+    newPop = calculateRelativeFiteness(newPop, target, rng);
+    // Sort by tournament wins (descending order)
+    sort(newPop.begin(), newPop.end(),
+         [](const Individual &a, const Individual &b) {
+           return a.boutWins > b.boutWins;
+         });
+    currentPop = selectByRank(newPop);
+    currentFits.clear();
+    for (Individual &ind : currentPop) {
+      currentFits.push_back(ind.hammingFitness);
+    }
+    if (i % 10 == 0) {
+      MyFile << "Generation " << i << " Fitness: " << endl;
+      printPopFits(MyFile, currentFits);
+    }
   }
 
   return 0;
 }
-// int Generational::genEvolver(int SDANumStates, int SDAOutputLen, int
-// numGenerations, Topology T, ostream& MyFile) {
-//     SDA *currentPop, *newPop, cp;
-//     currentPop = new SDA[genPopSize];
-//     newPop = new SDA[genPopSize];
-//     genPopFits.reserve(genPopSize);
-//     int modVal = numGenerations / 10;
-
-//     // Step 1: initialize the population
-//     for (int i = 0; i < genPopSize; ++i) {
-//         currentPop[i] = SDA(SDANumStates, genSDANumChars,
-//         genSDAResponseLength, SDAOutputLen);;// place member into population
-//         genPopFits.push_back(genCalcFitness(currentPop[i], T));// calculate
-//         new members fitness
-//     }
-
-//     MyFile << "Initial Pop Fitness Value: " << endl;
-//     genPrintPopFits(MyFile, genPopFits); // print population fitness
-
-//     // Step 2: Evolution
-//     for (int gen = 0; gen < numGenerations; ++gen) {
-//         genNewPopFits.clear();
-//         genNewPopFits.reserve(genPopSize);
-
-//         // Perform elitisim
-//         vector<double> elite(elitism, DBL_MAX);// vector holding two most
-//         elite fitnesses int idx1, idx2;// index locations of the two most
-//         elite SDA for (int e = 0; e < genPopFits.size(); e++){// go through
-//         the genertions pop fitness
-//             if(elite[0] > genPopFits[e]){
-//                 elite[0] = genPopFits[e];// update elite 1 fitness value
-//                 idx1 = e; // memner fitness better than elite 1
-//             }
-//             else if(elite[1] > genPopFits[e]){
-//                 elite[1] = genPopFits[e];// update elite 2 fintess value
-//                 idx2 = e;// member fitness better than elite 2 and not used
-//                 by elite 1
-//             }
-//         }
-//         // copy the elite SDA to the new population
-//         newPop[0].copy(currentPop[idx1]);
-//         newPop[1].copy(currentPop[idx2]);
-
-//         // Store the fitness of the most elite members in the first two
-//         positions genNewPopFits.push_back(genPopFits[idx1]);
-//         genNewPopFits.push_back(genPopFits[idx2]);
-
-//         // Generate the new population
-//         genMatingEvent(currentPop, newPop, T);
-
-//         // Replace current population with new population
-//         for (int mem = 0; mem < genPopSize; mem++){
-//             currentPop[mem] = newPop[mem];
-//         }
-//         if(gen % modVal == 0) genPrintPopFits(MyFile, genNewPopFits);// print
-//         every 10th generation
-//     }
-//     MyFile << "Final Fitness of Run: ";
-//     genPrintPopFits(MyFile, genNewPopFits);
-//     return 0;
-// }
