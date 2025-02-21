@@ -63,14 +63,15 @@ vector<Individual> calculateRelativeFiteness(vector<Individual> &population, con
     return individuals;
 }
 
-Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens, ostream &MyFile, int numChars, int popSize, int boutSize)
+Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens, ostream &MyFile, int numChars, int popSize, int boutSize, int seed)
 {
     this->numChars = numChars;
     this->popSize = popSize;
     this->boutSize = boutSize;
     // SDA *currentPop, *newPop;
-    Individual *currentPop;
-    currentPop = new Individual[popSize];
+    currentPop.reserve(popSize);
+    newPop.reserve(popSize*2);
+    // currentPop = new Individual[popSize];
     
     initFits.reserve(popSize);
     // init population
@@ -80,12 +81,12 @@ Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens, o
         Individual newInd;
         newInd.hammingFitness =  hammingFitness(newSDA, sequence);
         newInd.boutWins = 0;
-        currentPop[i] = newInd;
-        newPop[i] = currentPop[i];
+        currentPop.push_back(newInd);
         initFits.push_back(currentPop[i].hammingFitness);
         
     }
-    // Evolve(SDANumStates, SDAOutputLen, numGens, MyFile);
+    newPop = currentPop;
+    Evolve(currentPop, sequence, numGens, MyFile, seed);
 }
 
 /**
@@ -93,10 +94,10 @@ Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens, o
  */
 Ep::~Ep() = default;
 
-double fitness(SDA &sda, vector<int> &sequence)
-{
-    return 0.0;
-}
+// double fitness(SDA &sda, vector<int> &sequence)
+// {
+//     return 0.0;
+// }
 
 /**
  * Calculates fitness based on Hamming distance between SDA output and target sequence.
@@ -135,21 +136,6 @@ double hammingFitness(SDA &sda, const vector<int> &sequence)
     return differences; // Lower is better
 }
 
-int Ep::Evolve(vector<SDA> &population, const vector<int> &target, int numGens, ostream &MyFile, unsigned seed = 0)
-{
-    
-    newPop = new Individual[popSize * 2];
-
-    MyFile << "Initial Fitness: " << endl;
-    printPopFits(MyFile, initFits);
-
-    // Evolution
-    for (int i = 0; i < numGens; ++i)
-    {
-    }
-
-    return 0;
-}
 
 int Ep::printPopFits(ostream &outStrm, vector<double> &popFits)
 {
@@ -175,6 +161,19 @@ int Ep::printPopFits(ostream &outStrm, vector<double> &popFits)
     return 0;
 }
 
+int Ep::Evolve(vector<Individual> currentPop, const vector<int> &target, int numGens, ostream &MyFile, unsigned seed = 0)
+{
+
+    MyFile << "Initial Fitness: " << endl;
+    printPopFits(MyFile, initFits);
+
+    // Evolution
+    for (int i = 0; i < numGens; ++i) {
+        
+    }
+
+    return 0;
+}
 // int Generational::genEvolver(int SDANumStates, int SDAOutputLen, int numGenerations, Topology T, ostream& MyFile) {
 //     SDA *currentPop, *newPop, cp;
 //     currentPop = new SDA[genPopSize];

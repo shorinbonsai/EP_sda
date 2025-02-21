@@ -19,19 +19,9 @@ double *sdaProbs;
 int seed;
 int runs;
 int maxGens;
-int initNumTransMuts;
-int initNumRespMuts;
-int curNumTransMuts;
-int curNumRespMuts;
-int upBoundMuts;
-int dynamicMutOperator;
 int tournSize;
 int seqNum;
-int crossoverOp;
-double crossoverRate;
 double mutationRate;
-double cullingRate;
-bool randomCulling;
 int populationBestIdx;
 double populationBestFit; // current best population fitness
 double prevBestFitness = 0;
@@ -117,8 +107,8 @@ int intToChar(const vector<int> &from, vector<char> &to)
 /**
  * This method collects the command line arguments and places them in the respective variable.
  *
- * @param arguments popsize, numChars, sdaStates, seed, runs, maxGens, maxMuts, seqNum, tournSize, crossoverOp,
- *                  crossoverRate, mutationRate, cullingRate, randomCulling
+ * @param arguments popsize, numChars, sdaStates, seed, runs, maxGens, seqNum, tournSize
+ *                  
  * @return
  */
 int getArgs(char *arguments[])
@@ -137,28 +127,11 @@ int getArgs(char *arguments[])
     runs = stoi(arg, &pos);
     arg = arguments[6]; // maxGens
     maxGens = stoi(arg, &pos);
-    arg = arguments[7]; // initNumTransMut
-    initNumTransMuts = stoi(arg, &pos);
-    arg = arguments[8]; // initNumRespMut
-    initNumRespMuts = stoi(arg, &pos);
-    arg = arguments[9]; // dynamicMutOperator
-    dynamicMutOperator = stoi(arg, &pos);
-    arg = arguments[10]; // upBoundMuts
-    upBoundMuts = stoi(arg, &pos);
-    arg = arguments[11]; // seqNum
+
+    arg = arguments[7]; // seqNum
     seqNum = stoi(arg, &pos);
-    arg = arguments[12]; // tournSize
+    arg = arguments[8]; // tournSize
     tournSize = stoi(arg, &pos);
-    arg = arguments[13]; // crossoverOp
-    crossoverOp = stoi(arg, &pos);
-    arg = arguments[14]; // crossoverRate
-    crossoverRate = stod(arg, &pos);
-    arg = arguments[15]; // mutationRate
-    mutationRate = stod(arg, &pos);
-    arg = arguments[16]; // cullingRate
-    cullingRate = stod(arg, &pos);
-    arg = arguments[17]; // randomCulling
-    randomCulling = stoi(arg, &pos) == 1;
     cout << "Arguments Captured!" << endl;
     return 0;
 }
