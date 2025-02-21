@@ -1,6 +1,5 @@
-#include <iostream>
 #include "main.h"
 
+#include <iostream>
 
-
-vector<int> goalSeq;
+int main(int argc, char *argv[]) {}
