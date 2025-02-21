@@ -16,7 +16,7 @@ public:
 
 private:
     int Evolve(vector<SDA> &population, const vector<int> &target, int numGens, ostream &MyFile, unsigned seed = 0);
-    double fitness(SDA &sda);
+    double fitness(SDA &sda, vector<int> &sequence);
     int printPopFits(ostream &outStrm, vector<double> &popFits);
     int numChars;
     int popSize;

@@ -85,13 +85,13 @@ Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens, o
     {
         currentPop[i] = SDA(SDANumStates, numChars, responseLength, SDAOutputLen);
         newPop[i].copy(currentPop[i]);
-        initFits.push_back(fitness(currentPop[i]));
+        initFits.push_back(hammingFitness(currentPop[i], sequence));
         // TODO: calculate init fitness
     }
     // Evolve(SDANumStates, SDAOutputLen, numGens, MyFile);
 }
 
-double fitness(SDA &sda)
+double fitness(SDA &sda, vector<int> &sequence)
 {
     return 0.0;
 }
@@ -105,7 +105,7 @@ double fitness(SDA &sda)
  * @param target The target DNA sequence (using 0=A, 1=C, 2=G, 3=T)
  * @return Raw Hamming distance (number of differences)
  */
-int hammingFitness(SDA &sda, const vector<int> &target)
+double hammingFitness(SDA &sda, const vector<int> &sequence)
 {
     // Get SDA output
     vector<int> output = sda.rtnOutput(false, cout);
@@ -115,20 +115,20 @@ int hammingFitness(SDA &sda, const vector<int> &target)
         return INT_MAX; // SDA failed to generate output, return worst possible fitness
     }
 
-    int differences = 0;
-    int sequenceLength = min(output.size(), target.size());
+    double differences = 0.0;
+    int sequenceLength = min(output.size(), sequence.size());
 
     // Count positions that don't match
     for (int i = 0; i < sequenceLength; i++)
     {
-        if (output[i] != target[i])
+        if (output[i] != sequence[i])
         {
             differences++;
         }
     }
 
     // Add penalties for length differences (each extra/missing character counts as a mismatch)
-    differences += abs((int)(output.size() - target.size()));
+    differences += abs((int)(output.size() - sequence.size()));
 
     return differences; // Lower is better
 }
