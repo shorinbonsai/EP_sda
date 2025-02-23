@@ -72,11 +72,13 @@ vector<Individual> calculateRelativeFiteness(vector<Individual> &population,
 }
 
 Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens,
-       ostream &MyFile, int numChars, int popSize, int boutSize, int seed)
+       ostream &MyFile, int numChars, int popSize, int boutSize, int seed,
+       bool roulette)
     : rng(compute_seed(seed)) {
   this->numChars = numChars;
   this->popSize = popSize;
   this->boutSize = boutSize;
+  this->roulette = roulette;
   currentPop.reserve(popSize);
   newPop.reserve(popSize * 2);
 
@@ -94,7 +96,7 @@ Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens,
   }
   newPop = currentPop;
   currentFits = initFits;
-  Evolve(currentPop, sequence, numGens, MyFile);
+  Evolve(currentPop, sequence, numGens, MyFile, roulette);
 }
 
 /**
@@ -128,6 +130,49 @@ int Ep::printPopFits(ostream &outStrm, vector<double> &popFits) {
 }
 
 /**
+ * Selects 50% of individuals using roulette wheel selection based on relative
+ * fitness. Ensures no duplicates in the selection.
+ *
+ * @param individuals Vector of evaluated individuals
+ * @param seed Random seed for reproducibility (0 uses time-based seed)
+ * @return Selected individuals (50% of original population)
+ */
+vector<Individual> selectByRouletteWheel(vector<Individual> &individuals,
+                                         mt19937 &gen) {
+  int selectionSize = individuals.size() / 2;
+  vector<Individual> selected;
+  selected.reserve(selectionSize);
+
+  uniform_real_distribution<> distrib(0.0, 1.0);
+
+  // Track indices of selected individuals to avoid duplicates
+  unordered_set<int> selectedIndices;
+
+  while (selected.size() < selectionSize) {
+    double randomValue = distrib(gen);
+    double cumulativeProbability = 0.0;
+
+    for (int i = 0; i < individuals.size(); i++) {
+      cumulativeProbability += individuals[i].boutWins;
+
+      if (randomValue <= cumulativeProbability &&
+          selectedIndices.find(i) == selectedIndices.end()) {
+        selected.push_back(individuals[i]);
+        selectedIndices.insert(i);
+        break;
+      }
+    }
+
+    // If we couldn't select a new individual, adjust the distribution
+    if (selected.size() < selectionSize &&
+        selectedIndices.size() >= individuals.size()) {
+      break;  // Safety check in case we can't find enough unique individuals
+    }
+  }
+  return selected;
+}
+
+/**
  * Selects the top 50% of individuals based on tournament wins.
  *
  * @param individuals Vector of evaluated individuals
@@ -139,15 +184,11 @@ vector<Individual> selectByRank(vector<Individual> &individuals) {
   vector<Individual> selected(individuals.begin(),
                               individuals.begin() + selectionSize);
 
-  //   cout << "Rank Selection: Selected " << selected.size() << "
-  //   individuals\n"; cout << "Top individual has " << selected[0].boutWins <<
-  //   " wins\n";
-
   return selected;
 }
 
 int Ep::Evolve(vector<Individual> currentPop, const vector<int> &target,
-               int numGens, ostream &MyFile) {
+               int numGens, ostream &MyFile, bool roulette) {
   MyFile << "Initial Fitness: " << endl;
   printPopFits(MyFile, initFits);
 
@@ -169,7 +210,11 @@ int Ep::Evolve(vector<Individual> currentPop, const vector<int> &target,
          [](const Individual &a, const Individual &b) {
            return a.boutWins > b.boutWins;
          });
-    currentPop = selectByRank(newPop);
+    if (roulette) {
+      currentPop = selectByRouletteWheel(newPop, rng);
+    } else {
+      currentPop = selectByRank(newPop);
+    }
     currentFits.clear();
     for (Individual &ind : currentPop) {
       currentFits.push_back(ind.hammingFitness);

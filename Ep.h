@@ -26,12 +26,12 @@ class Ep {
  public:
   explicit Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence,
               int numGens, ostream &MyFile, int numChars, int popSize,
-              int boutSize, int seed);
+              int boutSize, int seed, bool roulette);
   ~Ep();
 
  private:
   int Evolve(vector<Individual> currentPop, const vector<int> &target,
-             int numGens, ostream &MyFile);
+             int numGens, ostream &MyFile, bool roulette);
   double fitness(SDA &sda, vector<int> &sequence);
   int printPopFits(ostream &outStrm, vector<double> &popFits);
   int numChars;
@@ -39,6 +39,7 @@ class Ep {
   int boutSize;
   int responseLength = 2;
   int seed;
+  bool roulette;
   mt19937 rng;
 
   vector<double> initFits;
