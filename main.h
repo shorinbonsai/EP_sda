@@ -11,7 +11,7 @@
 
 using namespace std;
 
-#define BIGGER_BETTER (bool)true
+#define BIGGER_BETTER (bool)false
 
 // Experiment Parameters
 int popsize;
@@ -29,6 +29,9 @@ double populationBestFit;  // current best population fitness
 double prevBestFitness = 0;
 int RICounter;  // Report Interval counter
 int seqLen;
+
+char pathToOut[150];
+
 
 vector<int> goalSeq;
 vector<int> testSeq;
@@ -121,8 +124,36 @@ int getArgs(char *arguments[]) {
   seqNum = stoi(arg, &pos);
   arg = arguments[8];  // tournSize
   tournSize = stoi(arg, &pos);
+
   cout << "Arguments Captured!" << endl;
   return 0;
+}
+
+template<class T>
+vector<double> calcStats(vector<T> vals, bool biggerBetter) {
+    double sum = 0.0;
+    double bestVal = (biggerBetter ? 0.0 : MAXFLOAT);
+
+    int val;
+    for (int idx = 0; idx < vals.size(); ++idx) {
+        val = vals[idx];
+        sum += val;
+        if ((biggerBetter && val > bestVal) || (!biggerBetter && val < bestVal)) {
+            bestVal = val;
+            populationBestIdx = idx;
+            populationBestFit = bestVal;
+        }
+    }
+
+    double mean = sum / (double) vals.size();
+    double stdDevSum = 0.0;
+    for (int val: vals) {
+        stdDevSum += pow((double) val - mean, 2);
+    }
+    double stdDev = sqrt(stdDevSum / ((double) vals.size() - 1.0));
+    double CI95 = 1.96 * (stdDev / sqrt(vals.size()));
+
+    return {mean, stdDev, CI95, bestVal}; // {mean, stdDev, 95CI, best}
 }
 
 // int initAlg(const string &pathToSeqs) {
