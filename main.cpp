@@ -20,4 +20,20 @@ int main(int argc, char *argv[]) {
             popsize, sdaStates);
     mkdir(pathToOut, 0777);
     expStats.open(string(pathToOut) + "./exp.dat", ios::out);
+
+    ofstream outFile(filename);
+
+    for (int run = 1; run < runs; ++run){
+        char runNumStr[20];
+        sprintf(runNumStr, "%02d", run);
+        filename = string(pathToOut) + "run" + string(runNumStr) + ".dat";
+        Ep newEp(sdaStates, seqLen, goalSeq, maxGens, outFile, numChars, popsize, tournSize, 1,
+       false);
+
+        char runNumStr[20];
+        sprintf(runNumStr, "%02d", run);
+        runStats.open(filename, ios::out);
+        printExpStatsHeader(cout);
+        printExpStatsHeader(runStats);
+    }
 }

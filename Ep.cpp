@@ -15,22 +15,26 @@ const int BOUTS_PER_INDIVIDUAL = 10;
  * @param target The target DNA sequence (using 0=A, 1=C, 2=G, 3=T)
  * @return Raw Hamming distance (number of differences)
  */
-double hammingFitness(SDA &sda, const vector<int> &sequence) {
+double hammingFitness(SDA &sda, const vector<int> &sequence)
+{
     // Get SDA output
     vector<int> output = sda.rtnOutput(false, cout);
 
-    if (output[0] == -1) {
-        return 9999999999.0;  // SDA failed to generate output, return worst
-                            // possible fitness
+    if (output[0] == -1)
+    {
+        return 9999999999.0; // SDA failed to generate output, return worst
+                             // possible fitness
     }
 
     double differences = 0.0;
     int sequenceLength = min(output.size(), sequence.size());
 
     // Count positions that don't match
-    for (int i = 0; i < sequenceLength; i++) {
-        if (output[i] != sequence[i]) {
-        differences++;
+    for (int i = 0; i < sequenceLength; i++)
+    {
+        if (output[i] != sequence[i])
+        {
+            differences++;
         }
     }
 
@@ -38,15 +42,17 @@ double hammingFitness(SDA &sda, const vector<int> &sequence) {
     // as a mismatch)
     differences += abs((int)(output.size() - sequence.size()));
 
-    return differences;  // Lower is better
+    return differences; // Lower is better
 }
 
 vector<Individual> calculateRelativeFiteness(vector<Individual> &population,
                                              const vector<int> &target,
-                                             mt19937 &gen) {
+                                             mt19937 &gen)
+{
     vector<Individual> individuals;
     individuals.reserve(population.size());
-    for (Individual &indiv : population) {
+    for (Individual &indiv : population)
+    {
         indiv.hammingFitness = hammingFitness(indiv.sda, target);
         indiv.boutWins = 0;
         individuals.push_back(indiv);
@@ -54,17 +60,21 @@ vector<Individual> calculateRelativeFiteness(vector<Individual> &population,
 
     uniform_int_distribution<> distrib(0, population.size() - 1);
 
-    for (Individual &individual : individuals) {
-        for (int i = 0; i < BOUTS_PER_INDIVIDUAL; i++) {
-        int opponentIdx = distrib(gen);
-        // Make sure opponent is not the same individual
-        while (opponentIdx == &individual - &individuals[0]) {
-            opponentIdx = distrib(gen);
-        }
+    for (Individual &individual : individuals)
+    {
+        for (int i = 0; i < BOUTS_PER_INDIVIDUAL; i++)
+        {
+            int opponentIdx = distrib(gen);
+            // Make sure opponent is not the same individual
+            while (opponentIdx == &individual - &individuals[0])
+            {
+                opponentIdx = distrib(gen);
+            }
 
-        if (individual.hammingFitness < individuals[opponentIdx].hammingFitness) {
-            individual.boutWins++;
-        }
+            if (individual.hammingFitness < individuals[opponentIdx].hammingFitness)
+            {
+                individual.boutWins++;
+            }
         }
     }
 
@@ -74,7 +84,8 @@ vector<Individual> calculateRelativeFiteness(vector<Individual> &population,
 Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens,
        ostream &MyFile, int numChars, int popSize, int boutSize, int seed,
        bool roulette)
-    : rng(compute_seed(seed)) {
+    : rng(compute_seed(seed))
+{
     this->numChars = numChars;
     this->popSize = popSize;
     this->boutSize = boutSize;
@@ -86,7 +97,8 @@ Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens,
     currentFits.reserve(popSize);
     newGenFits.reserve(popSize * 2);
     // init population
-    for (int i = 0; i < popSize; ++i) {
+    for (int i = 0; i < popSize; ++i)
+    {
         SDA newSDA(SDANumStates, numChars, responseLength, SDAOutputLen);
         Individual newInd;
         newInd.hammingFitness = hammingFitness(newSDA, sequence);
@@ -97,7 +109,7 @@ Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens,
     newPop = currentPop;
     currentFits = initFits;
     Evolve(currentPop, sequence, numGens, MyFile, roulette);
-    }
+}
 
 /**
  * Destructor.
@@ -109,18 +121,22 @@ Ep::~Ep() = default;
 //     return 0.0;
 // }
 
-int Ep::printPopFits(ostream &outStrm, vector<double> &popFits) {
+int Ep::printPopFits(ostream &outStrm, vector<double> &popFits)
+{
     outStrm << "Fitness Values: ";
     int count = 0;
     bool first = true;
-    for (double fit : popFits) {
+    for (double fit : popFits)
+    {
         // This ensures commas after each fitness value other than the last
-        if (!first) {
-        outStrm << ", ";
+        if (!first)
+        {
+            outStrm << ", ";
         }
         outStrm << fit;
-        if (fit > 150) {
-        count++;
+        if (fit > 150)
+        {
+            count++;
         }
         first = false;
     }
@@ -138,7 +154,8 @@ int Ep::printPopFits(ostream &outStrm, vector<double> &popFits) {
  * @return Selected individuals (50% of original population)
  */
 vector<Individual> selectByRouletteWheel(vector<Individual> &individuals,
-                                         mt19937 &gen) {
+                                         mt19937 &gen)
+{
     int selectionSize = individuals.size() / 2;
     vector<Individual> selected;
     selected.reserve(selectionSize);
@@ -148,25 +165,29 @@ vector<Individual> selectByRouletteWheel(vector<Individual> &individuals,
     // Track indices of selected individuals to avoid duplicates
     unordered_set<int> selectedIndices;
 
-    while (selected.size() < selectionSize) {
+    while (selected.size() < selectionSize)
+    {
         double randomValue = distrib(gen);
         double cumulativeProbability = 0.0;
 
-        for (int i = 0; i < individuals.size(); i++) {
-        cumulativeProbability += individuals[i].boutWins;
+        for (int i = 0; i < individuals.size(); i++)
+        {
+            cumulativeProbability += individuals[i].boutWins;
 
-        if (randomValue <= cumulativeProbability &&
-            selectedIndices.find(i) == selectedIndices.end()) {
-            selected.push_back(individuals[i]);
-            selectedIndices.insert(i);
-            break;
-        }
+            if (randomValue <= cumulativeProbability &&
+                selectedIndices.find(i) == selectedIndices.end())
+            {
+                selected.push_back(individuals[i]);
+                selectedIndices.insert(i);
+                break;
+            }
         }
 
         // If we couldn't select a new individual, adjust the distribution
         if (selected.size() < selectionSize &&
-            selectedIndices.size() >= individuals.size()) {
-        break;  // Safety check in case we can't find enough unique individuals
+            selectedIndices.size() >= individuals.size())
+        {
+            break; // Safety check in case we can't find enough unique individuals
         }
     }
     return selected;
@@ -178,17 +199,19 @@ vector<Individual> selectByRouletteWheel(vector<Individual> &individuals,
  * @param individuals Vector of evaluated individuals
  * @return Selected individuals (50% of original population)
  */
-vector<Individual> selectByRank(vector<Individual> &individuals) {
+vector<Individual> selectByRank(vector<Individual> &individuals)
+{
     // Select top 50%
     int selectionSize = individuals.size() / 2;
     vector<Individual> selected(individuals.begin(),
                                 individuals.begin() + selectionSize);
 
-  return selected;
+    return selected;
 }
 
 int Ep::Evolve(vector<Individual> currentPop, const vector<int> &target,
-               int numGens, ostream &MyFile, bool roulette) {
+               int numGens, ostream &MyFile, bool roulette)
+{
     const int RUNS = 30;
     MyFile << "Initial Fitness: " << endl;
     printPopFits(MyFile, initFits);
@@ -235,5 +258,5 @@ int Ep::Evolve(vector<Individual> currentPop, const vector<int> &target,
         }
     }
 
-  return 0;
+    return 0;
 }
