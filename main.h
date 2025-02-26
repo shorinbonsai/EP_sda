@@ -12,6 +12,7 @@
 using namespace std;
 
 #define BIGGER_BETTER (bool)false
+#define roulette (bool)false
 
 // Experiment Parameters
 int popsize;
@@ -24,10 +25,10 @@ int maxGens;
 int tournSize;
 int seqNum;
 double mutationRate;
-int populationBestIdx;
-double populationBestFit; // current best population fitness
+// int populationBestIdx;
+// double populationBestFit;  // current best population fitness
 double prevBestFitness = 0;
-int RICounter; // Report Interval counter
+int RICounter;  // Report Interval counter
 int seqLen;
 
 char pathToOut[150];
@@ -41,72 +42,21 @@ vector<int> seqToVector(const string &seq);
 int intToChar(const vector<int> &from, vector<char> &to);
 int getArgs(char *arguments[]);
 
-vector<vector<int>> getSequences(const string &pathToSeqs)
-{
-    string tmp;
-    ifstream in(pathToSeqs);
-    vector<vector<int>> rtn;
-    for (int seqIdx = 0; seqIdx < 6; ++seqIdx)
-    {
-        if (in.is_open())
-        {
-            getline(in, tmp);
-            getline(in, tmp);
-            getline(in, tmp);
-            rtn.push_back(seqToVector(tmp));
-            getline(in, tmp);
-        }
+vector<vector<int>> getSequences(const string &pathToSeqs) {
+  string tmp;
+  ifstream in(pathToSeqs);
+  vector<vector<int>> rtn;
+  for (int seqIdx = 0; seqIdx < 6; ++seqIdx) {
+    if (in.is_open()) {
+      getline(in, tmp);
+      getline(in, tmp);
+      getline(in, tmp);
+      rtn.push_back(seqToVector(tmp));
+      getline(in, tmp);
     }
-    in.close();
-    return rtn;
-}
-
-vector<int> seqToVector(const string &seq)
-{
-    vector<int> sequence;
-    for (char c : seq)
-    {
-        if (c == 'g' || c == 'G')
-        {
-            sequence.push_back(0);
-        }
-        else if (c == 'c' || c == 'C')
-        {
-            sequence.push_back(1);
-        }
-        else if (c == 'a' || c == 'A')
-        {
-            sequence.push_back(2);
-        }
-        else if (c == 't' || c == 'T')
-        {
-            sequence.push_back(3);
-        }
-    }
-    return sequence;
-}
-
-int intToChar(const vector<int> &from, vector<char> &to)
-{
-    for (int idx = 0; idx < seqLen; ++idx)
-    {
-        switch (from[idx])
-        {
-        case 0:
-            to[idx] = 'G';
-            break;
-        case 1:
-            to[idx] = 'C';
-            break;
-        case 2:
-            to[idx] = 'A';
-            break;
-        case 3:
-            to[idx] = 'T';
-            break;
-        }
-    }
-    return 0;
+  }
+  in.close();
+  return rtn;
 }
 
 /**
@@ -118,30 +68,29 @@ int intToChar(const vector<int> &from, vector<char> &to)
  *
  * @return
  */
-int getArgs(char *arguments[])
-{
-    size_t pos;
-    string arg;
-    arg = arguments[1]; // popsize
-    popsize = stoi(arg, &pos);
-    arg = arguments[2]; // numChars
-    numChars = stoi(arg, &pos);
-    arg = arguments[3]; // sdaStates
-    sdaStates = stoi(arg, &pos);
-    arg = arguments[4]; // seed
-    seed = stoi(arg, &pos);
-    arg = arguments[5]; // runs
-    runs = stoi(arg, &pos);
-    arg = arguments[6]; // maxGens
-    maxGens = stoi(arg, &pos);
+int getArgs(char *arguments[]) {
+  size_t pos;
+  string arg;
+  arg = arguments[1];  // popsize
+  popsize = stoi(arg, &pos);
+  arg = arguments[2];  // numChars
+  numChars = stoi(arg, &pos);
+  arg = arguments[3];  // sdaStates
+  sdaStates = stoi(arg, &pos);
+  arg = arguments[4];  // seed
+  seed = stoi(arg, &pos);
+  arg = arguments[5];  // runs
+  runs = stoi(arg, &pos);
+  arg = arguments[6];  // maxGens
+  maxGens = stoi(arg, &pos);
 
-    arg = arguments[7]; // seqNum
-    seqNum = stoi(arg, &pos);
-    arg = arguments[8]; // tournSize
-    tournSize = stoi(arg, &pos);
+  arg = arguments[7];  // seqNum
+  seqNum = stoi(arg, &pos);
+  arg = arguments[8];  // tournSize
+  tournSize = stoi(arg, &pos);
 
-    cout << "Arguments Captured!" << endl;
-    return 0;
+  cout << "Arguments Captured!" << endl;
+  return 0;
 }
 
 // int printExpStatsHeader(ostream &outp) {
@@ -167,7 +116,8 @@ int getArgs(char *arguments[])
 //     {
 //         val = vals[idx];
 //         sum += val;
-//         if ((biggerBetter && val > bestVal) || (!biggerBetter && val < bestVal))
+//         if ((biggerBetter && val > bestVal) || (!biggerBetter && val <
+//         bestVal))
 //         {
 //             bestVal = val;
 //             populationBestIdx = idx;
@@ -206,10 +156,11 @@ int getArgs(char *arguments[])
 //     ostream &os2;
 // };
 
-// double report(ofstream &outp, int run, int rptNum, bool biggerBetter, vector<double> fits)
+// double report(ofstream &outp, int run, int rptNum, bool biggerBetter,
+// vector<double> fits)
 // {
-//     vector<double> stats = calcStats<double>(fits, biggerBetter); // {mean, stdDev, 95CI, best}
-//     multiStream printAndSave(cout, outp);
+//     vector<double> stats = calcStats<double>(fits, biggerBetter); // {mean,
+//     stdDev, 95CI, best} multiStream printAndSave(cout, outp);
 
 //     printAndSave << left << setw(5) << run;
 //     printAndSave << left << setw(4) << rptNum;

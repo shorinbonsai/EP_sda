@@ -27,7 +27,8 @@ class SDA {
   vector<vector<vector<int>>> getResponses();
 
   int setOutputLen(int newLen);
-  int fillOutput(vector<int> &output, bool printToo, ostream &outStream);
+  int fillOutput(vector<int> &output, bool printToo = false,
+                 ostream &outStream = cout);
   vector<int> rtnOutput(bool printToo, ostream &outStream);
 
   // New functions for adding and deleting states
