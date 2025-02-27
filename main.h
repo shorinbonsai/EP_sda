@@ -1,18 +1,19 @@
-#include <sys/stat.h>
-
+#include <iomanip>
 #include <algorithm>
+#include <vector>
 #include <cmath>
 #include <fstream>
-#include <iomanip>
-#include <vector>
-
-#include "Ep.h"
+#include <sys/stat.h>
 #include "SDA.h"
 
 using namespace std;
 
-#define BIGGER_BETTER (bool)false
-#define roulette (bool)false
+// System Parameters
+#define REPORT_EVERY (int)10000
+#define TERM_CRIT 50
+int CULLING_EVERY;
+#define BIGGER_BETTER (bool)true
+double MIN_GEN_RATIO = 0.5;
 
 // Experiment Parameters
 int popsize;
@@ -22,73 +23,81 @@ double *sdaProbs;
 int seed;
 int runs;
 int maxGens;
+int initNumTransMuts;
+int initNumRespMuts;
+int curNumTransMuts;
+int curNumRespMuts;
+int upBoundMuts;
+int dynamicMutOperator;
 int tournSize;
 int seqNum;
+int crossoverOp;
+double crossoverRate;
 double mutationRate;
-// int populationBestIdx;
-// double populationBestFit;  // current best population fitness
+double cullingRate;
+bool randomCulling;
+int populationBestIdx;
+double populationBestFit;// current best population fitness
 double prevBestFitness = 0;
-int RICounter;  // Report Interval counter
-// extern int seqLen;
-
-char pathToOut[150];
+int RICounter;// Report Interval counter
 
 vector<int> goalSeq;
 vector<int> testSeq;
 vector<char> charSeq;
+int seqLen;
 
-vector<vector<int>> getSequences(const string &pathToSeqs);
-vector<int> seqToVector(const string &seq);
+SDA *pop;
+vector<double> fits;
+
+char pathToOut[150];
+
+// Program Method Declarations:
 int getArgs(char *arguments[]);
+int initAlg(const string &pathToSeqs);
+vector<vector<int>> getSequences(const string &pathToSeqs);
+int cmdLineIntro(ostream &outp);
+int makeReadMe(ostream &outp);
+int initPop(int run);
+double fitness(SDA &sda);
+int printExpStatsHeader(ostream &outp);
+double report(ofstream &outp, int run, int rptNum, bool biggerBetter);
+template<class T>
+vector<double> calcStats(vector<T> vals, bool biggerBetter);
+int matingEvent(bool biggerBetter);
+vector<int> tournSelect(int size, bool decreasing);
+bool compareFitness(int popIdx1, int popIdx2);
+int culling(double percentage, bool rndPick, bool biggerBetter);
+int runReport(ostream &outp, bool biggerBetter);
+template<class T1, class T2>
+int printMatches(T1 &outp, const vector<T2> &test, const vector<T2> &goal, bool newline);
+int expReport(ostream &outp, vector<double> bestFits, SDA bestSDA, bool biggerBetter);
 
-vector<vector<int>> getSequences(const string &pathToSeqs) {
-  string tmp;
-  ifstream in(pathToSeqs);
-  vector<vector<int>> rtn;
-  for (int seqIdx = 0; seqIdx < 6; ++seqIdx) {
-    if (in.is_open()) {
-      getline(in, tmp);
-      getline(in, tmp);
-      getline(in, tmp);
-      rtn.push_back(seqToVector(tmp));
-      getline(in, tmp);
+// Helper Method Declarations:
+vector<int> seqToVector(const string &seq);
+int intToChar(const vector<int> &from, vector<char> &to);
+template<class T1, class T2>
+int printVector(T1 &outp, vector<T2> vec, const string &msg, const string &sep, bool newline);
+template<class T1, class T2>
+int printIdxsOfVector(T1 &outp, vector<T2> vec, const vector<int> &idxs, const string &msg, const string &sep,
+                      bool newline);
+
+// Helper Class
+class multiStream : public ostream {
+public:
+    multiStream(ostream &os1, ostream &os2) : os1(os1), os2(os2) {}
+
+    template<class T>
+    multiStream &operator<<(const T &x) {
+        os1 << x;
+        os2 << x;
+        return *this;
     }
-  }
-  in.close();
-  return rtn;
-}
 
-/**
- * This method collects the command line arguments and places them in the
- * respective variable.
- *
- * @param arguments popsize, numChars, sdaStates, seed, runs, maxGens, seqNum,
- * tournSize
- *
- * @return
- */
-int getArgs(char *arguments[]) {
-  size_t pos;
-  string arg;
-  arg = arguments[1];  // popsize
-  popsize = stoi(arg, &pos);
-  arg = arguments[2];  // numChars
-  numChars = stoi(arg, &pos);
-  arg = arguments[3];  // sdaStates
-  sdaStates = stoi(arg, &pos);
-  arg = arguments[4];  // seed
-  seed = stoi(arg, &pos);
-  arg = arguments[5];  // runs
-  runs = stoi(arg, &pos);
-  arg = arguments[6];  // maxGens
-  maxGens = stoi(arg, &pos);
-
-  arg = arguments[7];  // seqNum
-  seqNum = stoi(arg, &pos);
-  arg = arguments[8];  // tournSize
-  tournSize = stoi(arg, &pos);
+private:
+    ostream &os1;
+    ostream &os2;
+};
 
 
-  cout << "Arguments Captured!" << endl;
-  return 0;
-}
+
+
