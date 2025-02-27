@@ -7,7 +7,7 @@ namespace filesystem = std::filesystem;
 int populationBestIdx;
 double populationBestFit;
 int expReport(ostream &outp, vector<double> bestFits, SDA bestSDA,
-              bool biggerBetter, const Ep &ep);
+              bool biggerBetter, const Ep &ep, int seqLen);
 
 int runReport(ostream &outp, bool biggerBetter, const Ep &ep) {
   auto maxIterator =
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   double expBestFit = (BIGGER_BETTER ? 0 : MAXFLOAT);
 
   goalSeq = getSequences(pathToSeqs)[seqNum];
-  seqLen = (int)goalSeq.size();
+  int seqLen = (int)goalSeq.size();
   SDA expBestSDA = SDA(sdaStates, numChars, 2, seqLen);
 
   sprintf(pathToOut, "./SEMOut/SEMatch on Seq%d with %dGens, %04dPS, %02dSt/",
@@ -72,12 +72,13 @@ int main(int argc, char *argv[]) {
     char runNumStr[20];
     sprintf(runNumStr, "%02d", run);
     filename = string(pathToOut) + "run" + string(runNumStr) + ".dat";
-    Ep newEp(sdaStates, seqLen, goalSeq, maxGens, outFile, numChars, popsize,
-             tournSize, seed, roulette);
+
 
     runStats.open(filename, ios::out);
     printExpStatsHeader(cout);
     printExpStatsHeader(runStats);
+    Ep newEp(sdaStates, seqLen, goalSeq, maxGens, outFile, numChars, popsize,
+             tournSize, seed, roulette);
 
     newEp.Evolve(newEp.currentPop, newEp.sequence, maxGens, runStats, roulette,
                  run);
@@ -95,14 +96,14 @@ int main(int argc, char *argv[]) {
 
   ofstream best;
   best.open(string(pathToOut) + "./best.dat", ios::out);
-  expReport(best, bests, expBestSDA, BIGGER_BETTER, newEp);
+  expReport(best, bests, expBestSDA, BIGGER_BETTER, newEp, seqLen);
   best.close();
   expStats.close();
   return 0;
 }
 
 int expReport(ostream &outp, vector<double> bestFits, SDA bestSDA,
-              bool biggerBetter, const Ep &ep) {
+              bool biggerBetter, const Ep &ep, int seqLen) {
   vector<double> stats = calcStats<double>(bestFits, BIGGER_BETTER);
   multiStream printAndSave(cout, outp);
   printAndSave << "Experiment Report:" << "\n";

@@ -17,6 +17,7 @@ using namespace std;
 
 extern int populationBestIdx;
 extern double populationBestFit;
+extern int seqLen;
 
 struct Individual {
   SDA sda;

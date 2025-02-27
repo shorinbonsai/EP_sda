@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <random>
+
 // #include <unordered_set>
 
 const int BOUTS_PER_INDIVIDUAL = 10;
@@ -20,14 +21,13 @@ double hammingFitness(SDA &sda, const vector<int> &sequence) {
   // Get SDA output
   vector<int> output = sda.rtnOutput(false, cout);
   if (output[0] == -1) {
-    return 9999999999.0;  // SDA failed to generate output, return worst
+    return 9999999999999.0;  // SDA failed to generate output, return worst
                           // possible fitness
   }
   double differences = 0.0;
-  int sequenceLength = min(output.size(), sequence.size());
 
   // Count positions that don't match
-  for (int i = 0; i < sequenceLength; i++) {
+  for (int i = 0; i < sequence.size() ; i++) {
     if (output[i] != sequence[i]) {
       differences++;
     }
@@ -35,7 +35,7 @@ double hammingFitness(SDA &sda, const vector<int> &sequence) {
 
   // Add penalties for length differences (each extra/missing character counts
   // as a mismatch)
-  differences += abs((int)(output.size() - sequence.size()));
+  // differences += abs((int)(output.size() - sequence.size()));
 
   return differences;  // Lower is better
 }
@@ -227,7 +227,7 @@ int Ep::Evolve(vector<Individual> currentPop, const vector<int> &target,
     }
 
     if (i % REPORT_FREQ == 0) {
-      cout << "Reporting..." << currentFits[0] << endl;
+    //   cout << "Reporting..." << currentFits[0] << endl;
       report(MyFile, run, i / REPORT_FREQ, BIGGER_BETTER, currentFits, *this);
     }
   }
