@@ -19,12 +19,10 @@ const int REPORT_FREQ = 10;
 double hammingFitness(SDA &sda, const vector<int> &sequence) {
   // Get SDA output
   vector<int> output = sda.rtnOutput(false, cout);
-
   if (output[0] == -1) {
     return 9999999999.0;  // SDA failed to generate output, return worst
                           // possible fitness
   }
-
   double differences = 0.0;
   int sequenceLength = min(output.size(), sequence.size());
 
@@ -84,15 +82,18 @@ Ep::Ep(int SDANumStates, int SDAOutputLen, vector<int> &sequence, int numGens,
   this->seqLen = sequence.size();
   currentPop.reserve(popSize);
   newPop.reserve(popSize * 2);
-
+  cout << "init stuff" << endl;
   initFits.reserve(popSize);
   currentFits.reserve(popSize);
   newGenFits.reserve(popSize * 2);
+  cout << "init stuff2" << endl;
   // init population
   for (int i = 0; i < popSize; ++i) {
     SDA newSDA(SDANumStates, numChars, responseLength, SDAOutputLen);
+    cout << "newSDA" << endl;
     Individual newInd;
     newInd.hammingFitness = hammingFitness(newSDA, sequence);
+    cout << "hammingFitness" << endl;
     newInd.boutWins = 0;
     currentPop.push_back(newInd);
     initFits.push_back(newInd.hammingFitness);
@@ -224,10 +225,107 @@ int Ep::Evolve(vector<Individual> currentPop, const vector<int> &target,
     for (Individual &ind : currentPop) {
       currentFits.push_back(ind.hammingFitness);
     }
+
     if (i % REPORT_FREQ == 0) {
+      cout << "Reporting..." << currentFits[0] << endl;
       report(MyFile, run, i / REPORT_FREQ, BIGGER_BETTER, currentFits, *this);
     }
   }
 
+  return 0;
+}
+
+template <class T>
+vector<double> calcStats(vector<T> vals, bool biggerBetter) {
+  double sum = 0.0;
+  double bestVal = (biggerBetter ? 0.0 : MAXFLOAT);
+
+  int val;
+  for (int idx = 0; idx < vals.size(); ++idx) {
+    val = vals[idx];
+    sum += val;
+    if ((biggerBetter && val > bestVal) || (!biggerBetter && val < bestVal)) {
+      bestVal = val;
+      populationBestIdx = idx;
+      populationBestFit = bestVal;
+    }
+  }
+
+  double mean = sum / (double)vals.size();
+  double stdDevSum = 0.0;
+  for (int val : vals) {
+    stdDevSum += pow((double)val - mean, 2);
+  }
+  double stdDev = sqrt(stdDevSum / ((double)vals.size() - 1.0));
+  double CI95 = 1.96 * (stdDev / sqrt(vals.size()));
+
+  return {mean, stdDev, CI95, bestVal};  // {mean, stdDev, 95CI, best}
+}
+
+template vector<double> calcStats<double>(vector<double> vals,
+                                          bool biggerBetter);
+
+int printExpStatsHeader(ostream &outp) {
+  outp << left << setw(5) << "Run";
+  outp << left << setw(4) << "RI";
+  outp << left << setw(10) << "Mean";
+  outp << left << setw(12) << "95% CI";
+  outp << left << setw(10) << "SD";
+  outp << left << setw(8) << "Best";
+  outp << left << setw(10) << "% Correct";
+  outp << endl;
+  return 0;
+}
+
+double report(ostream &outp, int run, int rptNum, bool biggerBetter,
+              vector<double> fits, const Ep &ep) {
+  vector<double> stats =
+      calcStats<double>(fits, biggerBetter);  // {mean, stdDev, 95CI, best}
+  multiStream printAndSave(cout, outp);
+
+  printAndSave << left << setw(5) << run;
+  printAndSave << left << setw(4) << rptNum;
+  printAndSave << left << setw(10) << stats[0];
+  printAndSave << left << setw(12) << stats[2];
+  printAndSave << left << setw(10) << stats[1];
+  printAndSave << left << setw(8) << stats[3];
+  printAndSave << left << setw(8) << (stats[3] / ep.seqLen) * 100 << "%";
+  printAndSave << "\n";
+  return stats[3];
+}
+
+vector<int> seqToVector(const string &seq) {
+  vector<int> sequence;
+  for (char c : seq) {
+    if (c == 'g' || c == 'G') {
+      sequence.push_back(0);
+    } else if (c == 'c' || c == 'C') {
+      sequence.push_back(1);
+    } else if (c == 'a' || c == 'A') {
+      sequence.push_back(2);
+    } else if (c == 't' || c == 'T') {
+      sequence.push_back(3);
+    }
+  }
+  return sequence;
+}
+
+int intToChar(const vector<int> &from, vector<char> &to, const Ep &ep) {
+  for (int idx = 0; idx < ep.seqLen; ++idx) {
+    switch (from[idx]) {
+      case 0:
+        to[idx] = 'G';
+        break;
+      case 1:
+        to[idx] = 'C';
+        break;
+      case 2:
+        to[idx] = 'A';
+        break;
+      case 3:
+        to[idx] = 'T';
+        break;
+    }
+  }
   return 0;
 }

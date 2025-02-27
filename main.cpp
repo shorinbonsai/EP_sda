@@ -1,34 +1,13 @@
 #include "main.h"
 
+#include <filesystem>
+namespace filesystem = std::filesystem;
 #include <iostream>
 
 int populationBestIdx;
 double populationBestFit;
-
 int expReport(ostream &outp, vector<double> bestFits, SDA bestSDA,
-              bool biggerBetter) {
-  vector<double> stats = calcStats<double>(bestFits, BIGGER_BETTER);
-  multiStream printAndSave(cout, outp);
-  printAndSave << "Experiment Report:" << "\n";
-  printAndSave << "Best Run: " << populationBestIdx + 1 << "\n";
-  printAndSave << "Best Fitness: " << bestFits[populationBestIdx] << " of "
-               << seqLen << "\n";
-  printAndSave << "Fitness 95% CI: " << stats[0] << " +- " << stats[2] << "\n";
-  printAndSave << "\n";
-  printAndSave << left << setw(20) << "Best Match: ";
-  bestSDA.fillOutput(testSeq);
-  intToChar(testSeq, charSeq);
-  printVector<multiStream, char>(printAndSave, charSeq, "", "", true);
-  printAndSave << left << setw(20) << "Matches: ";
-  printMatches<multiStream, int>(printAndSave, testSeq, goalSeq, true);
-  printAndSave << left << setw(20) << "Desired Sequence: ";
-  intToChar(goalSeq, charSeq);
-  printVector<multiStream, char>(printAndSave, charSeq, "", "", true);
-  printAndSave << "\nSDA:\n";
-  bestSDA.print(cout);
-  bestSDA.print(outp);
-  return 0;
-}
+              bool biggerBetter, const Ep &ep);
 
 int runReport(ostream &outp, bool biggerBetter, const Ep &ep) {
   auto maxIterator =
@@ -45,12 +24,12 @@ int runReport(ostream &outp, bool biggerBetter, const Ep &ep) {
   SDA sdaCopy = ep.currentPop[bestIdx].sda;
   sdaCopy.fillOutput(testSeq);
   printAndSave << left << setw(20) << "Best Match: ";
-  intToChar(testSeq, charSeq);
+  intToChar(testSeq, charSeq, ep);
   printVector<multiStream, char>(printAndSave, charSeq, "", "", true);
   printAndSave << left << setw(20) << "Matches: ";
   printMatches<multiStream, int>(printAndSave, testSeq, goalSeq, true);
   printAndSave << left << setw(20) << "Desired Sequence: ";
-  intToChar(goalSeq, charSeq);
+  intToChar(goalSeq, charSeq, ep);
   printVector<multiStream, char>(printAndSave, charSeq, "", "", true);
 
   outp << "SDA" << endl;
@@ -75,18 +54,20 @@ int main(int argc, char *argv[]) {
   vector<double> bests;
   bests.reserve(runs);
   double expBestFit = (BIGGER_BETTER ? 0 : MAXFLOAT);
-  SDA expBestSDA = SDA(sdaStates, numChars, 2, seqLen);
+
   goalSeq = getSequences(pathToSeqs)[seqNum];
   seqLen = (int)goalSeq.size();
+  SDA expBestSDA = SDA(sdaStates, numChars, 2, seqLen);
 
   sprintf(pathToOut, "./SEMOut/SEMatch on Seq%d with %dGens, %04dPS, %02dSt/",
           seqNum, maxGens, popsize, sdaStates);
-  mkdir(pathToOut, 0777);
+  filesystem::create_directories(pathToOut);
+  // mkdir(pathToOut, 0777);
   expStats.open(string(pathToOut) + "./exp.dat", ios::out);
-
   ofstream outFile(filename);
   int tmp;
-
+  Ep newEp(sdaStates, seqLen, goalSeq, maxGens, outFile, numChars, popsize,
+           tournSize, seed, roulette);
   for (int run = 1; run < runs; ++run) {
     char runNumStr[20];
     sprintf(runNumStr, "%02d", run);
@@ -114,8 +95,33 @@ int main(int argc, char *argv[]) {
 
   ofstream best;
   best.open(string(pathToOut) + "./best.dat", ios::out);
-  expReport(best, bests, expBestSDA, BIGGER_BETTER);
+  expReport(best, bests, expBestSDA, BIGGER_BETTER, newEp);
   best.close();
   expStats.close();
+  return 0;
+}
+
+int expReport(ostream &outp, vector<double> bestFits, SDA bestSDA,
+              bool biggerBetter, const Ep &ep) {
+  vector<double> stats = calcStats<double>(bestFits, BIGGER_BETTER);
+  multiStream printAndSave(cout, outp);
+  printAndSave << "Experiment Report:" << "\n";
+  printAndSave << "Best Run: " << populationBestIdx + 1 << "\n";
+  printAndSave << "Best Fitness: " << bestFits[populationBestIdx] << " of "
+               << seqLen << "\n";
+  printAndSave << "Fitness 95% CI: " << stats[0] << " +- " << stats[2] << "\n";
+  printAndSave << "\n";
+  printAndSave << left << setw(20) << "Best Match: ";
+  bestSDA.fillOutput(testSeq);
+  intToChar(testSeq, charSeq, ep);
+  printVector<multiStream, char>(printAndSave, charSeq, "", "", true);
+  printAndSave << left << setw(20) << "Matches: ";
+  printMatches<multiStream, int>(printAndSave, testSeq, goalSeq, true);
+  printAndSave << left << setw(20) << "Desired Sequence: ";
+  intToChar(goalSeq, charSeq, ep);
+  printVector<multiStream, char>(printAndSave, charSeq, "", "", true);
+  printAndSave << "\nSDA:\n";
+  bestSDA.print(cout);
+  bestSDA.print(outp);
   return 0;
 }

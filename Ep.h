@@ -67,44 +67,13 @@ class Ep {
   }
 };
 
-int printExpStatsHeader(ostream &outp) {
-  outp << left << setw(5) << "Run";
-  outp << left << setw(4) << "RI";
-  outp << left << setw(10) << "Mean";
-  outp << left << setw(12) << "95% CI";
-  outp << left << setw(10) << "SD";
-  outp << left << setw(8) << "Best";
-  outp << left << setw(10) << "% Correct";
-  outp << endl;
-  return 0;
-}
-
+int printExpStatsHeader(ostream &outp);
 template <class T>
-vector<double> calcStats(vector<T> vals, bool biggerBetter) {
-  double sum = 0.0;
-  double bestVal = (biggerBetter ? 0.0 : MAXFLOAT);
-
-  int val;
-  for (int idx = 0; idx < vals.size(); ++idx) {
-    val = vals[idx];
-    sum += val;
-    if ((biggerBetter && val > bestVal) || (!biggerBetter && val < bestVal)) {
-      bestVal = val;
-      populationBestIdx = idx;
-      populationBestFit = bestVal;
-    }
-  }
-
-  double mean = sum / (double)vals.size();
-  double stdDevSum = 0.0;
-  for (int val : vals) {
-    stdDevSum += pow((double)val - mean, 2);
-  }
-  double stdDev = sqrt(stdDevSum / ((double)vals.size() - 1.0));
-  double CI95 = 1.96 * (stdDev / sqrt(vals.size()));
-
-  return {mean, stdDev, CI95, bestVal};  // {mean, stdDev, 95CI, best}
-}
+vector<double> calcStats(vector<T> vals, bool biggerBetter);
+double report(ostream &outp, int run, int rptNum, bool biggerBetter,
+              vector<double> fits, const Ep &ep);
+vector<int> seqToVector(const string &seq);
+int intToChar(const vector<int> &from, vector<char> &to, const Ep &ep);
 
 // Helper Class
 class multiStream : public ostream {
@@ -122,59 +91,6 @@ class multiStream : public ostream {
   ostream &os1;
   ostream &os2;
 };
-
-double report(ostream &outp, int run, int rptNum, bool biggerBetter,
-              vector<double> fits, const Ep &ep) {
-  vector<double> stats =
-      calcStats<double>(fits, biggerBetter);  // {mean, stdDev, 95CI, best}
-  multiStream printAndSave(cout, outp);
-
-  printAndSave << left << setw(5) << run;
-  printAndSave << left << setw(4) << rptNum;
-  printAndSave << left << setw(10) << stats[0];
-  printAndSave << left << setw(12) << stats[2];
-  printAndSave << left << setw(10) << stats[1];
-  printAndSave << left << setw(8) << stats[3];
-  printAndSave << left << setw(8) << (stats[3] / ep.seqLen) * 100 << "%";
-  printAndSave << "\n";
-  return stats[3];
-}
-
-vector<int> seqToVector(const string &seq) {
-  vector<int> sequence;
-  for (char c : seq) {
-    if (c == 'g' || c == 'G') {
-      sequence.push_back(0);
-    } else if (c == 'c' || c == 'C') {
-      sequence.push_back(1);
-    } else if (c == 'a' || c == 'A') {
-      sequence.push_back(2);
-    } else if (c == 't' || c == 'T') {
-      sequence.push_back(3);
-    }
-  }
-  return sequence;
-}
-
-int intToChar(const vector<int> &from, vector<char> &to, const Ep &ep) {
-  for (int idx = 0; idx < ep.seqLen; ++idx) {
-    switch (from[idx]) {
-      case 0:
-        to[idx] = 'G';
-        break;
-      case 1:
-        to[idx] = 'C';
-        break;
-      case 2:
-        to[idx] = 'A';
-        break;
-      case 3:
-        to[idx] = 'T';
-        break;
-    }
-  }
-  return 0;
-}
 
 template <class T1, class T2>
 int printVector(T1 &outp, vector<T2> vec, const string &msg, const string &sep,

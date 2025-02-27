@@ -39,7 +39,6 @@ vector<char> charSeq;
 
 vector<vector<int>> getSequences(const string &pathToSeqs);
 vector<int> seqToVector(const string &seq);
-int intToChar(const vector<int> &from, vector<char> &to);
 int getArgs(char *arguments[]);
 
 vector<vector<int>> getSequences(const string &pathToSeqs) {
@@ -88,6 +87,8 @@ int getArgs(char *arguments[]) {
   seqNum = stoi(arg, &pos);
   arg = arguments[8];  // tournSize
   tournSize = stoi(arg, &pos);
+  arg = arguments[9];  // seqNum
+  seqNum = stoi(arg, &pos);
 
   cout << "Arguments Captured!" << endl;
   return 0;
