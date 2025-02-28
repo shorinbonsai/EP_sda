@@ -29,7 +29,20 @@ SDA::SDA(int numStates, int numChars, int maxRespLen, int outputLen,
 
 SDA::SDA() : SDA(10, 2, 2, 1000) {}
 
-SDA::SDA(SDA &other) { copy(other); }
+SDA::SDA(const SDA &other)
+    : maxStates(other.maxStates),
+      initChar(other.initChar),
+      numStates(other.numStates),
+      initState(other.initState),
+      curState(other.curState),
+      numChars(other.numChars),
+      maxRespLen(other.maxRespLen),
+      outputLen(other.outputLen),
+      verbose(other.verbose),
+      transitions(other.transitions),
+      responses(other.responses) {
+  if (verbose) cout << "SDA Copied (via copy constructor)." << endl;
+}
 
 SDA::~SDA() = default;
 
@@ -100,43 +113,17 @@ int SDA::randomize() {
 }
 
 int SDA::copy(SDA &other) {
-  if (initChar < 0) {
-    cout << "Error in SDA Class: copy(...): this SDA has not been initialized.";
-    return -1;
-  }
-  if (other.initChar < 0) {
-    cout
-        << "Error in SDA Class: copy(...): other SDA has not been initialized.";
-    return -1;
-  }
-
+  // Directly copy all member variables
+  maxStates = other.maxStates;
   initChar = other.initChar;
-  if (numStates != other.numStates) {
-    transitions.reserve(other.numStates);
-    responses.reserve(other.numStates);
-  }
   numStates = other.numStates;
   initState = other.initState;
-  if (numChars != other.numChars) {
-    for (auto &stateTrans : transitions) {
-      stateTrans.reserve(other.numChars);
-    }
-    for (auto &stateResp : responses) {
-      stateResp.reserve(other.numChars);
-    }
-  }
   numChars = other.numChars;
-  if (maxRespLen != other.maxRespLen) {
-    for (auto &stateResp : responses) {
-      for (auto &resp : stateResp) {
-        resp.reserve(other.maxRespLen);
-      }
-    }
-  }
   maxRespLen = other.maxRespLen;
   outputLen = other.outputLen;
   verbose = other.verbose;
 
+  // Use vector assignments (automatic deep copy)
   transitions = other.transitions;
   responses = other.responses;
   if (verbose) cout << "SDA Copied." << endl;
@@ -384,7 +371,7 @@ int SDA::mutate(int numMuts) {
 }
 
 //!!!!!!!!!!!!!!!!!!!!!! Static version (does fixed amount of mutations for each
-//!type)
+//! type)
 int SDA::mutate(int transMuts, int respMuts) {
   if (initChar < 0) {
     cout << "Error in SDA Class: mutate(...): this SDA has not been "
