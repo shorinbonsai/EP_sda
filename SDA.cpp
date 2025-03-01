@@ -341,15 +341,15 @@ int SDA::mutate(int numMuts) {
 
   for (int mut = 0; mut < numMuts; ++mut) {
     double randVal = drand48();
-    if (randVal < 0.05) {  // 4% chance of mutating initial character
+    if (randVal < 0.04) {  // 4% chance of mutating initial character
       initChar = (int)lrand48() % numChars;
       if (verbose) {
         cout << "Completed mutation on the SDA's initial character." << endl;
       }
       return 0;
-    } else if (0.05 <= randVal && randVal < 0.15) {
+    } else if (0.04 <= randVal && randVal < 0.12) {
       deleteState();
-    } else if (0.15 <= randVal && randVal < 0.25) {
+    } else if (0.12 <= randVal && randVal < 0.20) {
       addState();
     } else {
       mutPt = (int)lrand48() % numStates;
@@ -372,38 +372,38 @@ int SDA::mutate(int numMuts) {
 
 //!!!!!!!!!!!!!!!!!!!!!! Static version (does fixed amount of mutations for each
 //! type)
-int SDA::mutate(int transMuts, int respMuts) {
-  if (initChar < 0) {
-    cout << "Error in SDA Class: mutate(...): this SDA has not been "
-            "initialized.";
-    return -1;
-  }
+// int SDA::mutate(int transMuts, int respMuts) {
+//   if (initChar < 0) {
+//     cout << "Error in SDA Class: mutate(...): this SDA has not been "
+//             "initialized.";
+//     return -1;
+//   }
 
-  if (drand48() < 0.1) {  // 10% chance of mutating initial character
-    initChar = (int)lrand48() % numChars;
-  }
+//   if (drand48() < 0.1) {  // 10% chance of mutating initial character
+//     initChar = (int)lrand48() % numChars;
+//   }
 
-  int mutPt, respSize;
-  vector<int> oneResponse;
+//   int mutPt, respSize;
+//   vector<int> oneResponse;
 
-  for (int mut = 0; mut < transMuts; ++mut) {
-    mutPt = (int)lrand48() % numStates;
-    int transNum = (int)lrand48() % numChars;
-    transitions.at(mutPt).at(transNum) = (int)lrand48() % numStates;
-  }
+//   for (int mut = 0; mut < transMuts; ++mut) {
+//     mutPt = (int)lrand48() % numStates;
+//     int transNum = (int)lrand48() % numChars;
+//     transitions.at(mutPt).at(transNum) = (int)lrand48() % numStates;
+//   }
 
-  for (int mut = 0; mut < respMuts; ++mut) {
-    mutPt = (int)lrand48() % numStates;
-    int transNum = (int)lrand48() % numChars;
-    oneResponse.clear();
-    respSize = (int)lrand48() % maxRespLen + 1;
-    for (int i = 0; i < respSize; ++i) {
-      oneResponse.push_back((int)lrand48() % numChars);
-    }
-    responses.at(mutPt).at(transNum) = oneResponse;
-  }
-  return 0;
-}
+//   for (int mut = 0; mut < respMuts; ++mut) {
+//     mutPt = (int)lrand48() % numStates;
+//     int transNum = (int)lrand48() % numChars;
+//     oneResponse.clear();
+//     respSize = (int)lrand48() % maxRespLen + 1;
+//     for (int i = 0; i < respSize; ++i) {
+//       oneResponse.push_back((int)lrand48() % numChars);
+//     }
+//     responses.at(mutPt).at(transNum) = oneResponse;
+//   }
+//   return 0;
+// }
 
 int SDA::fillOutput(vector<int> &output, bool printToo, ostream &outStream) {
   if (initChar < 0) {

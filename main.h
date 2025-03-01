@@ -2,16 +2,19 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <numeric>
 #include <vector>
+namespace filesystem = std::filesystem;
 
 #include "SDA.h"
 
 using namespace std;
 
 // System Parameters
-#define REPORT_EVERY (int)10000
+#define REPORT_EVERY (int)10
 #define TERM_CRIT 50
 int CULLING_EVERY;
 #define BIGGER_BETTER (bool)true
@@ -30,6 +33,7 @@ int initNumRespMuts;
 int curNumTransMuts;
 int curNumRespMuts;
 int upBoundMuts;
+int numMuts;
 int dynamicMutOperator;
 int tournSize;
 int seqNum;
@@ -49,8 +53,11 @@ vector<char> charSeq;
 int seqLen;
 
 SDA *pop;
-SDA *doublePop;
+vector<SDA> doublePop;
 vector<double> fits;
+vector<double> doubleFits;
+vector<double> relativeFits;
+vector<double> doubleRelativeFits;
 
 char pathToOut[150];
 
@@ -76,7 +83,8 @@ int printMatches(T1 &outp, const vector<T2> &test, const vector<T2> &goal,
                  bool newline);
 int expReport(ostream &outp, vector<double> bestFits, SDA bestSDA,
               bool biggerBetter);
-
+int calcRelativeFitness();
+int selectByRank();
 // Helper Method Declarations:
 vector<int> seqToVector(const string &seq);
 int intToChar(const vector<int> &from, vector<char> &to);

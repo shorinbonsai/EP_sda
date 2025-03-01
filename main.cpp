@@ -27,23 +27,29 @@ int getArgs(char *arguments[]) {
   runs = stoi(arg, &pos);
   arg = arguments[6];  // maxGens
   maxGens = stoi(arg, &pos);
-  arg = arguments[11];  // seqNum
+  arg = arguments[7];  // seqNum
   seqNum = stoi(arg, &pos);
-  arg = arguments[12];  // tournSize
+  arg = arguments[8];  // tournSize
   tournSize = stoi(arg, &pos);
+  arg = arguments[9];  // numMuts
+  numMuts = stoi(arg, &pos);
   cout << "Arguments Captured!" << endl;
   return 0;
 }
 
 int initAlg(const string &pathToSeqs) {
   srand48(time(nullptr));  // use system time as random number seed
-  srand48(seed);           // read the random number seed
+  // srand48(seed);           // read the random number seed
   // vector<vector<int>> sequences = getSequences(pathToSeqs);
   goalSeq = getSequences(pathToSeqs)[seqNum];
   seqLen = (int)goalSeq.size();
-  fits.reserve(popsize);
+  fits.resize(popsize);
+  doubleFits.resize(popsize * 2);
+  relativeFits.resize(popsize);
+  doubleRelativeFits.resize(popsize * 2);
 
   pop = new SDA[popsize];
+  doublePop.reserve(popsize * 2);
   for (int idx = 0; idx < popsize; ++idx) {
     pop[idx] = SDA(sdaStates, numChars, 2, seqLen);
   }
@@ -124,6 +130,34 @@ double fitness(SDA &sda) {
   return val;
 }
 
+int random_range(int min, int max) {
+  long range = (long)max - min + 1;
+  // Get a random number and scale it to the range
+  return min + (int)(lrand48() % range);
+}
+
+int calcRelativeFitness() {
+  // doubleRelativeFits.clear();
+  doubleRelativeFits.resize(popsize * 2);
+  for (int idx = 0; idx < popsize * 2; ++idx) {
+    doubleRelativeFits.push_back(0.0);
+    for (int i = 0; i < tournSize; ++i) {
+      int opponentIdx = random_range(0, popsize * 2 - 1);
+      while (opponentIdx == idx) {
+        opponentIdx = random_range(0, popsize * 2 - 1);
+      }
+      if (BIGGER_BETTER && doubleFits[idx] > doubleFits[opponentIdx]) {
+        doubleRelativeFits[idx] += 1.0;
+      }
+      if (!BIGGER_BETTER && doubleFits[idx] < doubleFits[opponentIdx]) {
+        doubleRelativeFits[idx] += 1.0;
+      }
+    }
+  }
+
+  return 0;
+}
+
 int printExpStatsHeader(ostream &outp) {
   outp << left << setw(5) << "Run";
   outp << left << setw(4) << "RI";
@@ -180,32 +214,48 @@ vector<double> calcStats(vector<T> vals, bool biggerBetter) {
 }
 
 int matingEvent(bool biggerBetter) {
-  int numMuts;
-  SDA child1, child2;
+  SDA child1;
+  doublePop.clear();
+  doubleFits.clear();
 
-  vector<int> idxs = tournSelect(tournSize, biggerBetter);
-
-  child1.copy(pop[idxs[0]]);
-  child2.copy(pop[idxs[1]]);
-  if (drand48() < crossoverRate) {
-    if (crossoverOp == 0)
-      child1.twoPointCrossover(child2);
-    else if (crossoverOp == 1)
-      child1.oneStateCrossover(child2);
+  for (int idx = 0; idx < popsize; ++idx) {
+    doublePop.push_back(pop[idx]);
+    doubleFits.push_back(fits[idx]);
+  }
+  for (int idx = 0; idx < popsize; ++idx) {
+    child1 = pop[idx];
+    child1.mutate(numMuts);
+    doublePop.push_back(child1);
+    doubleFits.push_back(fitness(child1));
+    // cout << "doublefit size: " << doubleFits.size() << endl;
   }
 
-  if (drand48() < mutationRate) {
-    if (dynamicMutOperator == 0) {
-      child1.mutate(curNumTransMuts, curNumRespMuts);
-      child2.mutate(curNumTransMuts, curNumRespMuts);
-    }
+  calcRelativeFitness();
+  // Create a vector of indices
+  vector<int> indices(doublePop.size());
+  iota(indices.begin(), indices.end(), 0);
+
+  // Sort indices based on compareFitness
+  sort(indices.begin(), indices.end(), compareFitness);
+  // Reorder doublePop and doubleFits based on sorted indices
+  vector<SDA> sortedDoublePop;
+  vector<double> sortedDoubleFits;
+  for (int idx : indices) {
+    sortedDoublePop.push_back(doublePop[idx]);
+    sortedDoubleFits.push_back(doubleFits[idx]);
   }
+  doublePop = sortedDoublePop;
+  doubleFits = sortedDoubleFits;
 
-  pop[idxs.end()[-1]] = child1;
-  pop[idxs.end()[-2]] = child2;
+  // sort(doublePop.begin(), doublePop.end(), compareFitness);
+  // sort(doubleFits.begin(), doubleFits.end(), compareFitness);
+  selectByRank();
+  return 0;
+}
 
-  fits[idxs.end()[-1]] = fitness(child1);
-  fits[idxs.end()[-2]] = fitness(child2);
+int selectByRank() {
+  copy(doubleFits.begin(), doubleFits.begin() + popsize, fits.begin());
+  copy(doublePop.begin(), doublePop.begin() + popsize, pop);
   return 0;
 }
 
@@ -235,7 +285,10 @@ vector<int> tournSelect(int size, bool decreasing) {
 }
 
 bool compareFitness(int popIdx1, int popIdx2) {
-  return fits[popIdx1] < fits[popIdx2];
+  if (BIGGER_BETTER) {
+    return doubleRelativeFits[popIdx1] > doubleRelativeFits[popIdx2];
+  }
+  return doubleRelativeFits[popIdx1] < doubleRelativeFits[popIdx2];
 }
 
 int culling(double percentage, bool rndPick, bool biggerBetter) {
@@ -402,34 +455,6 @@ int printIdxsOfVector(T1 &outp, vector<T2> vec, const vector<int> &idxs,
   return 0;
 }
 
-/**
- * This method...
- *
- * Input variables:
- * 1.   Population size
- * 2.   Number of characters (in SDA)
- * 3.   Number of states
- * 4.   Seed
- * 5.   Number of runs
- * 6.   Maximum number of mating events
- * 7.   Default Number of Transition Mutations
- * 8.   Default Number of Response Mutations
- * 9.   Dynamic Mutation Operator? (0 -> static, >0 -> dynamic implementation to
- * use)
- * 10.  Upper Bound on Mutations
- * 11.  Sequence number
- * 12.  Tournament size
- * 13.  Crossover operator
- * 14.  Crossover Rate
- * 15.  Mutation Rate
- * 16.  Culling Rate
- * 17.  Random Culling
- * 18.  Culling Every _ Reporting Intervals
- *
- * @param argc
- * @param argv
- * @return
- */
 int main(int argc, char *argv[]) {
   getArgs(argv);
   string pathToSeqs = "./Sequences.dat";
@@ -444,13 +469,12 @@ int main(int argc, char *argv[]) {
   SDA expBestSDA = SDA(sdaStates, numChars, 2, seqLen);
   cmdLineIntro(cout);
   char dynamicMessage[20];
-  sprintf(dynamicMessage, "%s%d",
-          (dynamicMutOperator == 0 ? "Static" : "Dynamic"), dynamicMutOperator);
   sprintf(pathToOut,
-          "./AAMOut/AAMatch on Seq%d with %.1fmilMMEs, %04dPS, %02dSt, "
+          "./SQMOut/SQMatch on Seq%d with %dGens, %04dPS, %02dSt, "
           " %dTS/",
-          seqNum, (double)maxGens / 1000000, popsize, sdaStates, tournSize);
-  mkdir(pathToOut, 0777);
+          seqNum, maxGens, popsize, sdaStates, tournSize);
+  filesystem::create_directories(pathToOut);
+  // mkdir(pathToOut, 0777);
   expStats.open(string(pathToOut) + "./exp.dat", ios::out);
   readMe.open(string(pathToOut) + "./read.me", ios::out);
   makeReadMe(readMe);
@@ -458,8 +482,6 @@ int main(int argc, char *argv[]) {
 
   int tmp;
   for (int run = 1; run < runs + 1; ++run) {
-    curNumTransMuts = initNumTransMuts;
-    curNumRespMuts = initNumRespMuts;
     initPop(run);
     char runNumStr[20];
     sprintf(runNumStr, "%02d", run);
@@ -472,8 +494,8 @@ int main(int argc, char *argv[]) {
     int gen = 1;
     int stallCount = 0;
     double best = (BIGGER_BETTER ? 0 : MAXFLOAT);
-    while (gen <= maxGens &&
-           (stallCount < TERM_CRIT || gen < MIN_GEN_RATIO * maxGens)) {
+    while (gen <= maxGens) {
+      // cout << "dddddoublefit size: " << doubleFits.size() << endl;
       matingEvent(BIGGER_BETTER);
 
       if (gen % REPORT_EVERY == 0) {
@@ -486,10 +508,6 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      if (gen % (int)(CULLING_EVERY * REPORT_EVERY) == 0 &&
-          stallCount < TERM_CRIT) {
-        culling(cullingRate, randomCulling, BIGGER_BETTER);
-      }
       gen++;
     }
 

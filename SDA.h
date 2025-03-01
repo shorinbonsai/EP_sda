@@ -20,7 +20,7 @@ class SDA {
   int twoPointCrossover(SDA &other, int firstCP = -1, int secondCP = -1);
   int oneStateCrossover(SDA &other);
   int mutate(int numMuts);
-  int mutate(int transMuts, int respMuts);
+  // int mutate(int transMuts, int respMuts);
   int fillOutput(vector<int> &output, bool printToo = false,
                  ostream &outStream = cout);
   vector<int> rtnOutput(bool printToo = false, ostream &outStream = cout);
