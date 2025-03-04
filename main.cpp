@@ -227,7 +227,6 @@ int matingEvent(bool biggerBetter) {
     child1.mutate(numMuts);
     doublePop.push_back(child1);
     doubleFits.push_back(fitness(child1));
-    // cout << "doublefit size: " << doubleFits.size() << endl;
   }
 
   calcRelativeFitness();
@@ -471,8 +470,8 @@ int main(int argc, char *argv[]) {
   char dynamicMessage[20];
   sprintf(pathToOut,
           "./SQMOut/SQMatch on Seq%d with %dGens, %04dPS, %02dSt, "
-          " %dTS/",
-          seqNum, maxGens, popsize, sdaStates, tournSize);
+          " %dTS, %dMuts/",
+          seqNum, maxGens, popsize, sdaStates, tournSize, numMuts);
   filesystem::create_directories(pathToOut);
   // mkdir(pathToOut, 0777);
   expStats.open(string(pathToOut) + "./exp.dat", ios::out);
@@ -495,7 +494,6 @@ int main(int argc, char *argv[]) {
     int stallCount = 0;
     double best = (BIGGER_BETTER ? 0 : MAXFLOAT);
     while (gen <= maxGens) {
-      // cout << "dddddoublefit size: " << doubleFits.size() << endl;
       matingEvent(BIGGER_BETTER);
 
       if (gen % REPORT_EVERY == 0) {
