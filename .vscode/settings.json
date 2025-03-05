@@ -1,0 +1,22 @@
+{
+    "files.associations": {
+        "random": "cpp",
+        "algorithm": "cpp",
+        "unordered_set": "cpp",
+        "*.tcc": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "iosfwd": "cpp",
+        "iomanip": "cpp",
+        "ostream": "cpp"
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/g++-11",
+    "ocaml.sandbox": {
+        "kind": "custom",
+        "template": "$prog $args"
+    },
+        "cmake.configureOnOpen": true,
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.generator": "Ninja", // or your preferred generator
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
+}

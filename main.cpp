@@ -39,7 +39,7 @@ int getArgs(char *arguments[]) {
 
 int initAlg(const string &pathToSeqs) {
   srand48(time(nullptr));  // use system time as random number seed
-  // srand48(seed);           // read the random number seed
+  srand48(seed);           // read the random number seed
   // vector<vector<int>> sequences = getSequences(pathToSeqs);
   goalSeq = getSequences(pathToSeqs)[seqNum];
   seqLen = (int)goalSeq.size();
