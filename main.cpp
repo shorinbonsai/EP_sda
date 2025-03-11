@@ -38,7 +38,7 @@ int getArgs(char *arguments[]) {
 }
 
 int initAlg(const string &pathToSeqs) {
-  srand48(time(nullptr));  // use system time as random number seed
+  // srand48(time(nullptr));  // use system time as random number seed
   srand48(seed);           // read the random number seed
   // vector<vector<int>> sequences = getSequences(pathToSeqs);
   goalSeq = getSequences(pathToSeqs)[seqNum];
@@ -137,7 +137,7 @@ int random_range(int min, int max) {
 }
 
 int calcRelativeFitness() {
-  // doubleRelativeFits.clear();
+  doubleRelativeFits.clear();
   doubleRelativeFits.resize(popsize * 2);
   for (int idx = 0; idx < popsize * 2; ++idx) {
     doubleRelativeFits.push_back(0.0);
@@ -230,26 +230,75 @@ int matingEvent(bool biggerBetter) {
   }
 
   calcRelativeFitness();
-  // Create a vector of indices
-  vector<int> indices(doublePop.size());
-  iota(indices.begin(), indices.end(), 0);
 
-  // Sort indices based on compareFitness
-  sort(indices.begin(), indices.end(), compareFitness);
-  // Reorder doublePop and doubleFits based on sorted indices
-  vector<SDA> sortedDoublePop;
-  vector<double> sortedDoubleFits;
-  for (int idx : indices) {
-    sortedDoublePop.push_back(doublePop[idx]);
-    sortedDoubleFits.push_back(doubleFits[idx]);
+  if (ROULETTE) {
+    // Select by roulette wheel
+    selectByRoulette();
+  } else {
+    vector<int> indices(doublePop.size());
+    iota(indices.begin(), indices.end(), 0);
+
+    // Sort indices based on compareFitness
+    sort(indices.begin(), indices.end(), compareFitness);
+    // Reorder doublePop and doubleFits based on sorted indices
+    vector<SDA> sortedDoublePop;
+    vector<double> sortedDoubleFits;
+    for (int idx : indices) {
+      sortedDoublePop.push_back(doublePop[idx]);
+      sortedDoubleFits.push_back(doubleFits[idx]);
+    }
+    doublePop = sortedDoublePop;
+    doubleFits = sortedDoubleFits;
+    selectByRank();
   }
-  doublePop = sortedDoublePop;
-  doubleFits = sortedDoubleFits;
 
-  // sort(doublePop.begin(), doublePop.end(), compareFitness);
-  // sort(doubleFits.begin(), doubleFits.end(), compareFitness);
-  selectByRank();
+  // Create a vector of indices
   return 0;
+}
+
+
+int selectByRoulette() {
+    vector<double> tempRelativeFits = doubleRelativeFits; // Temporary copy
+    vector<bool> selected(doublePop.size(), false);       // Track selected individuals
+    int selectedCount = 0;
+
+    while (selectedCount < popsize) {
+        // Calculate total fitness of remaining candidates
+        double total = accumulate(tempRelativeFits.begin(), tempRelativeFits.end(), 0.0);
+
+        if (total == 0.0) {
+            // Assign equal probability if all remaining fitnesses are zero
+            for (double &relFit : tempRelativeFits) relFit = 1.0;
+            total = tempRelativeFits.size();
+        }
+
+        // Build cumulative probabilities
+        vector<double> cumulative;
+        cumulative.reserve(tempRelativeFits.size());
+        double sum = 0.0;
+        for (double relFit : tempRelativeFits) {
+            sum += relFit / total;
+            cumulative.push_back(sum);
+        }
+
+        // Spin the wheel
+        double randVal = drand48();
+        auto it = lower_bound(cumulative.begin(), cumulative.end(), randVal);
+        int idx = it - cumulative.begin();
+
+        // Handle edge case
+        if (idx >= tempRelativeFits.size()) idx = tempRelativeFits.size() - 1;
+
+        // Ensure unique selection
+        if (!selected[idx]) {
+            pop[selectedCount].copy(doublePop[idx]);
+            fits[selectedCount] = doubleFits[idx];
+            selected[idx] = true;
+            tempRelativeFits[idx] = 0.0; // Prevent reselection
+            selectedCount++;
+        }
+    }
+    return 0;
 }
 
 int selectByRank() {

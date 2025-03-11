@@ -19,6 +19,7 @@ using namespace std;
 int CULLING_EVERY;
 #define BIGGER_BETTER (bool)true
 double MIN_GEN_RATIO = 0.5;
+#define ROULETTE (bool)true
 
 // Experiment Parameters
 int popsize;
@@ -85,6 +86,7 @@ int expReport(ostream &outp, vector<double> bestFits, SDA bestSDA,
               bool biggerBetter);
 int calcRelativeFitness();
 int selectByRank();
+int selectByRoulette();
 // Helper Method Declarations:
 vector<int> seqToVector(const string &seq);
 int intToChar(const vector<int> &from, vector<char> &to);
