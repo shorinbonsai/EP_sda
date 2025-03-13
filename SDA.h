@@ -10,7 +10,7 @@ class SDA {
  public:
   SDA();
   explicit SDA(int numStates, int numChars, int maxRespLen, int outputLen,
-               int initState = 0, bool verbose = false, int maxStates = 100);
+               int initState = 0, bool verbose = false, int maxStates = 30);
   SDA(const SDA &other);
   ~SDA();
 

@@ -33,13 +33,17 @@ int getArgs(char *arguments[]) {
   tournSize = stoi(arg, &pos);
   arg = arguments[9];  // numMuts
   numMuts = stoi(arg, &pos);
+  arg = arguments[10];  // cullingRate
+  cullingRate = stod(arg, &pos);
+  arg = arguments[11];
+  CULLING_EVERY = stoi(arg, &pos);
   cout << "Arguments Captured!" << endl;
   return 0;
 }
 
 int initAlg(const string &pathToSeqs) {
   // srand48(time(nullptr));  // use system time as random number seed
-  srand48(seed);           // read the random number seed
+  srand48(seed);  // read the random number seed
   // vector<vector<int>> sequences = getSequences(pathToSeqs);
   goalSeq = getSequences(pathToSeqs)[seqNum];
   seqLen = (int)goalSeq.size();
@@ -103,6 +107,11 @@ int makeReadMe(ostream &outp) {
   outp << "Max Generations: " << maxGens << endl;
   outp << "Report Every: " << REPORT_EVERY << " generations" << endl;
   outp << "Tournament Size: " << tournSize << endl;
+  outp << "Culling Every: " << CULLING_EVERY * REPORT_EVERY << " generations"
+       << endl;
+  outp << "Culling Winners: Worst " << (int)(cullingRate * 100)
+       << "% of the population" << endl;
+
   return 0;
 }
 
@@ -213,7 +222,7 @@ vector<double> calcStats(vector<T> vals, bool biggerBetter) {
   return {mean, stdDev, CI95, bestVal};  // {mean, stdDev, 95CI, best}
 }
 
-int matingEvent(bool biggerBetter) {
+int matingEvent(bool biggerBetter, double cullingRate) {
   SDA child1;
   doublePop.clear();
   doubleFits.clear();
@@ -234,6 +243,9 @@ int matingEvent(bool biggerBetter) {
   if (ROULETTE) {
     // Select by roulette wheel
     selectByRoulette();
+    if (cullingRate > 0.0) {
+      culling(cullingRate, BIGGER_BETTER);
+    }
   } else {
     vector<int> indices(doublePop.size());
     iota(indices.begin(), indices.end(), 0);
@@ -250,60 +262,84 @@ int matingEvent(bool biggerBetter) {
     doublePop = sortedDoublePop;
     doubleFits = sortedDoubleFits;
     selectByRank();
+    if (cullingRate > 0.0) {
+      culling(cullingRate, BIGGER_BETTER);
+    }
   }
 
   // Create a vector of indices
   return 0;
 }
 
-
 int selectByRoulette() {
-    vector<double> tempRelativeFits = doubleRelativeFits; // Temporary copy
-    vector<bool> selected(doublePop.size(), false);       // Track selected individuals
-    int selectedCount = 0;
+  vector<double> tempRelativeFits = doubleRelativeFits;  // Temporary copy
+  vector<bool> selected(doublePop.size(), false);  // Track selected individuals
+  int selectedCount = 0;
 
-    while (selectedCount < popsize) {
-        // Calculate total fitness of remaining candidates
-        double total = accumulate(tempRelativeFits.begin(), tempRelativeFits.end(), 0.0);
+  while (selectedCount < popsize) {
+    // Calculate total fitness of remaining candidates
+    double total =
+        accumulate(tempRelativeFits.begin(), tempRelativeFits.end(), 0.0);
 
-        if (total == 0.0) {
-            // Assign equal probability if all remaining fitnesses are zero
-            for (double &relFit : tempRelativeFits) relFit = 1.0;
-            total = tempRelativeFits.size();
-        }
-
-        // Build cumulative probabilities
-        vector<double> cumulative;
-        cumulative.reserve(tempRelativeFits.size());
-        double sum = 0.0;
-        for (double relFit : tempRelativeFits) {
-            sum += relFit / total;
-            cumulative.push_back(sum);
-        }
-
-        // Spin the wheel
-        double randVal = drand48();
-        auto it = lower_bound(cumulative.begin(), cumulative.end(), randVal);
-        int idx = it - cumulative.begin();
-
-        // Handle edge case
-        if (idx >= tempRelativeFits.size()) idx = tempRelativeFits.size() - 1;
-
-        // Ensure unique selection
-        if (!selected[idx]) {
-            pop[selectedCount].copy(doublePop[idx]);
-            fits[selectedCount] = doubleFits[idx];
-            selected[idx] = true;
-            tempRelativeFits[idx] = 0.0; // Prevent reselection
-            selectedCount++;
-        }
+    if (total == 0.0) {
+      // Assign equal probability if all remaining fitnesses are zero
+      for (double &relFit : tempRelativeFits) relFit = 1.0;
+      total = tempRelativeFits.size();
     }
-    return 0;
+
+    // Build cumulative probabilities
+    vector<double> cumulative;
+    cumulative.reserve(tempRelativeFits.size());
+    double sum = 0.0;
+    for (double relFit : tempRelativeFits) {
+      sum += relFit / total;
+      cumulative.push_back(sum);
+    }
+
+    // Spin the wheel
+    double randVal = drand48();
+    auto it = lower_bound(cumulative.begin(), cumulative.end(), randVal);
+    int idx = it - cumulative.begin();
+
+    // Handle edge case
+    if (idx >= tempRelativeFits.size()) idx = tempRelativeFits.size() - 1;
+
+    // Ensure unique selection
+    if (!selected[idx]) {
+      pop[selectedCount].copy(doublePop[idx]);
+      fits[selectedCount] = doubleFits[idx];
+      selected[idx] = true;
+      tempRelativeFits[idx] = 0.0;  // Prevent reselection
+      selectedCount++;
+    }
+  }
+  return 0;
 }
 
 int selectByRank() {
   copy(doubleFits.begin(), doubleFits.begin() + popsize, fits.begin());
   copy(doublePop.begin(), doublePop.begin() + popsize, pop);
+  return 0;
+}
+
+
+int keepBest(double percent, bool biggerBetter) {
+  int numToKeep = (int)(popsize * percent);
+  vector<int> bestIdxs;
+  bestIdxs.reserve(numToKeep);
+  bestIdxs = tournSelect(numToKeep, !biggerBetter);
+
+  vector<SDA> bestSDAs;
+  bestSDAs.reserve(numToKeep);
+  vector<double> bestFits;
+  bestFits.reserve(numToKeep);
+  for (int idx : bestIdxs) {
+    bestSDAs.push_back(pop[idx]);
+    bestFits.push_back(fits[idx]);
+  }
+
+  copy(bestFits.begin(), bestFits.end(), fits.begin());
+  copy(bestSDAs.begin(), bestSDAs.end(), pop);
   return 0;
 }
 
@@ -339,7 +375,7 @@ bool compareFitness(int popIdx1, int popIdx2) {
   return doubleRelativeFits[popIdx1] < doubleRelativeFits[popIdx2];
 }
 
-int culling(double percentage, bool rndPick, bool biggerBetter) {
+int culling(double percentage, bool biggerBetter) {
   if (percentage == 1) {  // Cull all but the best SDA
     pop[0].copy(pop[populationBestIdx]);
     fits[0] = fitness(pop[0]);
@@ -353,13 +389,8 @@ int culling(double percentage, bool rndPick, bool biggerBetter) {
   // Otherwise, cull percentage% of the population
   int numKillings = (int)(popsize * percentage);
   vector<int> contestants;
-  if (rndPick) {  // Cull random percentage% of the population
-    contestants.reserve(numKillings);
-    contestants = tournSelect(numKillings, !biggerBetter);
-  } else {  // Cull worst percentage% of the population
-    contestants.reserve(popsize);
-    contestants = tournSelect(popsize, !biggerBetter);
-  }
+  contestants.reserve(popsize);
+  contestants = tournSelect(popsize, !biggerBetter);
 
   int idxToCull;
   for (int cnt = 0; cnt < numKillings; cnt++) {
@@ -519,8 +550,9 @@ int main(int argc, char *argv[]) {
   char dynamicMessage[20];
   sprintf(pathToOut,
           "./SQMOut/SQMatch on Seq%d with %dGens, %04dPS, %02dSt, "
-          " %dTS, %dMuts/",
-          seqNum, maxGens, popsize, sdaStates, tournSize, numMuts);
+          " %dTS, %dMuts, %03d%%CuR, %dCE/",
+          seqNum, maxGens, popsize, sdaStates, tournSize, numMuts,
+          (int)(cullingRate * 100), CULLING_EVERY);
   filesystem::create_directories(pathToOut);
   // mkdir(pathToOut, 0777);
   expStats.open(string(pathToOut) + "./exp.dat", ios::out);
@@ -543,7 +575,14 @@ int main(int argc, char *argv[]) {
     int stallCount = 0;
     double best = (BIGGER_BETTER ? 0 : MAXFLOAT);
     while (gen <= maxGens) {
-      matingEvent(BIGGER_BETTER);
+      int genRatio = (int)(100 * (gen/(double)maxGens));
+      if (gen % (int)(CULLING_EVERY * REPORT_EVERY) == 0 && genRatio < 80) {
+        cout << "Culling at generation " << gen << endl;
+        matingEvent(BIGGER_BETTER, cullingRate);
+
+      } else {
+        matingEvent(BIGGER_BETTER, 0.0);
+      }
 
       if (gen % REPORT_EVERY == 0) {
         tmp = report(runStats, run, (int)gen / (REPORT_EVERY), BIGGER_BETTER);

@@ -19,7 +19,7 @@ using namespace std;
 int CULLING_EVERY;
 #define BIGGER_BETTER (bool)true
 double MIN_GEN_RATIO = 0.5;
-#define ROULETTE (bool)true
+#define ROULETTE (bool)false
 
 // Experiment Parameters
 int popsize;
@@ -74,10 +74,10 @@ int printExpStatsHeader(ostream &outp);
 double report(ofstream &outp, int run, int rptNum, bool biggerBetter);
 template <class T>
 vector<double> calcStats(vector<T> vals, bool biggerBetter);
-int matingEvent(bool biggerBetter);
+int matingEvent(bool biggerBetter, double cullingRate);
 vector<int> tournSelect(int size, bool decreasing);
 bool compareFitness(int popIdx1, int popIdx2);
-int culling(double percentage, bool rndPick, bool biggerBetter);
+int culling(double percentage, bool biggerBetter);
 int runReport(ostream &outp, bool biggerBetter);
 template <class T1, class T2>
 int printMatches(T1 &outp, const vector<T2> &test, const vector<T2> &goal,
