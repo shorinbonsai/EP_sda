@@ -10,7 +10,7 @@ class SDA {
  public:
   SDA();
   explicit SDA(int numStates, int numChars, int maxRespLen, int outputLen,
-               int initState = 0, bool verbose = false, int maxStates = 30);
+               int initState = 0, bool verbose = false, int maxStates = 50);
   SDA(const SDA &other);
   ~SDA();
 
@@ -29,6 +29,7 @@ class SDA {
   // New functions for adding and deleting states
   int addState();
   int deleteState();
+  int getNumStates() const;
 
  private:
   int maxStates;  // Maximum allowed states

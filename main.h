@@ -20,6 +20,7 @@ int CULLING_EVERY;
 #define BIGGER_BETTER (bool)true
 double MIN_GEN_RATIO = 0.5;
 #define ROULETTE (bool)false
+const int CULL_CAP = 80;
 
 // Experiment Parameters
 int popsize;

@@ -7,9 +7,8 @@
  * This method collects the command line arguments and places them in the
  * respective variable.
  *
- * @param arguments popsize, numChars, sdaStates, seed, runs, maxGens, maxMuts,
- * seqNum, tournSize, crossoverOp, crossoverRate, mutationRate, cullingRate,
- * randomCulling
+ * @param arguments popsize, numChars, sdaStates, seed, runs, maxGens,
+ * seqNum, tournSize, numMuts, cullingRate, CULLING_EVERY
  * @return
  */
 int getArgs(char *arguments[]) {
@@ -111,6 +110,11 @@ int makeReadMe(ostream &outp) {
        << endl;
   outp << "Culling Winners: Worst " << (int)(cullingRate * 100)
        << "% of the population" << endl;
+  if (numMuts == 0) {
+    outp << "Number of Mutations: Random (1-3)" << endl;
+  } else {
+    outp << "Number of Mutations: " << numMuts << endl;
+  }
 
   return 0;
 }
@@ -322,7 +326,6 @@ int selectByRank() {
   return 0;
 }
 
-
 int keepBest(double percent, bool biggerBetter) {
   int numToKeep = (int)(popsize * percent);
   vector<int> bestIdxs;
@@ -412,6 +415,8 @@ int runReport(ostream &outp, bool biggerBetter) {
 
   multiStream printAndSave(cout, outp);
   printAndSave << "The best fitness is " << fits[bestIdx] << "\n";
+  int finalNumStates = pop[bestIdx].getNumStates();
+  printAndSave << "Final Number of states: " << finalNumStates << "\n";
   pop[bestIdx].fillOutput(testSeq);
   printAndSave << left << setw(20) << "Best Match: ";
   intToChar(testSeq, charSeq);
@@ -550,7 +555,7 @@ int main(int argc, char *argv[]) {
   char dynamicMessage[20];
   sprintf(pathToOut,
           "./SQMOut/SQMatch on Seq%d with %dGens, %04dPS, %02dSt, "
-          " %dTS, %dMuts, %03d%%CuR, %dCE/",
+          " %dTS, %dMuts, %02d%%CuR, %dCE/",
           seqNum, maxGens, popsize, sdaStates, tournSize, numMuts,
           (int)(cullingRate * 100), CULLING_EVERY);
   filesystem::create_directories(pathToOut);
@@ -575,8 +580,9 @@ int main(int argc, char *argv[]) {
     int stallCount = 0;
     double best = (BIGGER_BETTER ? 0 : MAXFLOAT);
     while (gen <= maxGens) {
-      int genRatio = (int)(100 * (gen/(double)maxGens));
-      if (gen % (int)(CULLING_EVERY * REPORT_EVERY) == 0 && genRatio < 80) {
+      int genRatio = (int)(100 * (gen / (double)maxGens));
+      if (gen % (int)(CULLING_EVERY * REPORT_EVERY) == 0 &&
+          genRatio < CULL_CAP) {
         cout << "Culling at generation " << gen << endl;
         matingEvent(BIGGER_BETTER, cullingRate);
 

@@ -329,17 +329,24 @@ int SDA::deleteState() {
   return 0;
 }
 
+int SDA::getNumStates() const { return numStates; }
+
 int SDA::mutate(int numMuts) {
   if (initChar < 0) {
     cout << "Error in SDA Class: mutate(...): this SDA has not been "
             "initialized.";
     return -1;
   }
+  // Randomly choose number of mutations if numMuts is 0 (1-3 mutations)
+  int tmpMut = numMuts;
+  if (numMuts == 0) {
+    tmpMut = (int)lrand48() % 3 + 1;
+  }
 
   int mutPt, respSize;
   vector<int> oneResponse;
 
-  for (int mut = 0; mut < numMuts; ++mut) {
+  for (int mut = 0; mut < tmpMut; ++mut) {
     double randVal = drand48();
     if (randVal < 0.04) {  // 4% chance of mutating initial character
       initChar = (int)lrand48() % numChars;
