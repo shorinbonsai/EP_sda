@@ -388,6 +388,7 @@ int culling(double percentage, bool biggerBetter) {
     }
     return 0;
   }
+  
 
   // Otherwise, cull percentage% of the population
   int numKillings = (int)(popsize * percentage);

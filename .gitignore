@@ -1,3 +1,9 @@
 build/
 .idea/
 ep_sda
+.cache/
+.vscode/
+.ropeproject/
+SQMOut/
+SQMOut_no roulette/
+SQMOut_seq0mixed/

@@ -85,6 +85,7 @@ int SDA::setOutputLen(int newLen) {
   return 0;
 }
 
+
 int SDA::randomize() {
   if (initChar < 0) {
     cout << "Error in SDA Class: randomize(): this SDA has not been "

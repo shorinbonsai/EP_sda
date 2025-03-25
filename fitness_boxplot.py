@@ -47,7 +47,53 @@ def process_directory(directory_path):
     
     return results
 
-def create_boxplots(results, output_path='fitness_boxplots.png'):
+# def create_boxplots(results, output_path='fitness_boxplots.png'):
+#     """
+#     Create box plots from the extracted fitness values.
+#     """
+#     if not results:
+#         print("No fitness data found.")
+#         return
+    
+#     # Set up the plot
+#     plt.figure(figsize=(12, 8))
+    
+#     # Create a boxplot
+#     sns.set_style("whitegrid")
+    
+#     # Prepare data for boxplot
+#     data = []
+#     labels = []
+    
+#     for exp_name, fitness_values in results.items():
+#         data.append(fitness_values)
+#         labels.append(exp_name)
+    
+#     # Create the boxplot
+#     ax = sns.boxplot(data=data, palette="Set3")
+    
+#     # Set labels and title
+#     plt.xlabel('Experiment')
+#     plt.ylabel('Best Fitness Value')
+#     plt.title('Distribution of Best Fitness Values Across Experiments')
+    
+#     # Set x-axis tick labels
+#     ax.set_xticklabels(labels, rotation=45, ha='right')
+    
+#     # Add a grid
+#     plt.grid(True, linestyle='--', alpha=0.7)
+    
+#     # Tight layout to ensure everything fits
+#     plt.tight_layout()
+    
+#     # Save the plot
+#     plt.savefig(output_path)
+#     print(f"Boxplot saved to {output_path}")
+    
+#     # Show the plot
+#     plt.show()
+
+def create_boxplots(results, output_path='fitness_boxplots_new2.png'):
     """
     Create box plots from the extracted fitness values.
     """
@@ -67,13 +113,33 @@ def create_boxplots(results, output_path='fitness_boxplots.png'):
     
     for exp_name, fitness_values in results.items():
         data.append(fitness_values)
-        labels.append(exp_name)
+        
+        # Extract numeric parameters from directory name format
+        if ' with ' in exp_name:
+            # Isolate the parameter section (e.g., "1000Gens, 0500PS...")
+            params_section = exp_name.split(' with ')[1]
+            # Split into individual parameter strings
+            param_strings = [s.strip() for s in params_section.split(',')]
+            
+            extracted_values = []
+            for param_str in param_strings:
+                # Extract leading numeric value from each parameter component
+                match = re.match(r'^(\d+)', param_str)
+                extracted_values.append(match.group(1) if match else "?")
+            
+            # Join values with underscores to form the label
+            label = '_'.join(extracted_values)
+        else:
+            # Fallback for unexpected directory names
+            label = exp_name
+        
+        labels.append(label)
     
     # Create the boxplot
     ax = sns.boxplot(data=data, palette="Set3")
     
     # Set labels and title
-    plt.xlabel('Experiment')
+    plt.xlabel('Experiment (Gens_PS_St_TS_Muts_CuR_CE)')
     plt.ylabel('Best Fitness Value')
     plt.title('Distribution of Best Fitness Values Across Experiments')
     
