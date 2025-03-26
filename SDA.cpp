@@ -4,6 +4,7 @@ SDA::SDA(int numStates, int numChars, int maxRespLen, int outputLen,
          int initState, bool verbose, int maxStates) {
   initChar = -1;
   this->numStates = numStates;
+  this->initNumStates = numStates;
   this->initState = initState;
   this->numChars = numChars;
   this->maxRespLen = maxRespLen;
@@ -33,6 +34,7 @@ SDA::SDA(const SDA &other)
     : maxStates(other.maxStates),
       initChar(other.initChar),
       numStates(other.numStates),
+      initNumStates(other.initNumStates),
       initState(other.initState),
       curState(other.curState),
       numChars(other.numChars),
@@ -85,7 +87,6 @@ int SDA::setOutputLen(int newLen) {
   return 0;
 }
 
-
 int SDA::randomize() {
   if (initChar < 0) {
     cout << "Error in SDA Class: randomize(): this SDA has not been "
@@ -98,9 +99,10 @@ int SDA::randomize() {
   vector<int> oneResponse;
   oneResponse.reserve(maxRespLen);
   int respLen;
-  for (int state = 0; state < numStates; ++state) {
+
+  for (int state = 0; state < initNumStates; ++state) {
     for (int trans = 0; trans < numChars; ++trans) {
-      transitions[state][trans] = (int)lrand48() % numStates;
+      transitions[state][trans] = (int)lrand48() % initNumStates;
       oneResponse.clear();
       respLen = (int)lrand48() % maxRespLen + 1;
       for (int val = 0; val < respLen; ++val) {

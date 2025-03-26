@@ -388,7 +388,6 @@ int culling(double percentage, bool biggerBetter) {
     }
     return 0;
   }
-  
 
   // Otherwise, cull percentage% of the population
   int numKillings = (int)(popsize * percentage);
@@ -582,8 +581,8 @@ int main(int argc, char *argv[]) {
     double best = (BIGGER_BETTER ? 0 : MAXFLOAT);
     while (gen <= maxGens) {
       int genRatio = (int)(100 * (gen / (double)maxGens));
-      if (gen % (int)(CULLING_EVERY * REPORT_EVERY) == 0 &&
-          genRatio < CULL_CAP) {
+      if (gen % (int)(CULLING_EVERY * REPORT_EVERY) == 0 && genRatio > 30 &&
+          genRatio < 95) {
         cout << "Culling at generation " << gen << endl;
         matingEvent(BIGGER_BETTER, cullingRate);
 

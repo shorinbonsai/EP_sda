@@ -33,8 +33,9 @@ class SDA {
 
  private:
   int maxStates;  // Maximum allowed states
-  int create();   // Randomly initialize the SDA by setting initChar and filling
-                  // the transitions and response vectors
+  int initNumStates;
+  int create();  // Randomly initialize the SDA by setting initChar and filling
+                 // the transitions and response vectors
 
   int initChar{};    // The initial character to drive the first transition
   int numStates{};   // The number of states in the SDA
