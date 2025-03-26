@@ -99,10 +99,11 @@ int SDA::randomize() {
   vector<int> oneResponse;
   oneResponse.reserve(maxRespLen);
   int respLen;
+  numStates = initNumStates;
 
-  for (int state = 0; state < initNumStates; ++state) {
+  for (int state = 0; state < numStates; ++state) {
     for (int trans = 0; trans < numChars; ++trans) {
-      transitions[state][trans] = (int)lrand48() % initNumStates;
+      transitions[state][trans] = (int)lrand48() % numStates;
       oneResponse.clear();
       respLen = (int)lrand48() % maxRespLen + 1;
       for (int val = 0; val < respLen; ++val) {

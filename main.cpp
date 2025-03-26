@@ -178,7 +178,8 @@ int printExpStatsHeader(ostream &outp) {
   outp << left << setw(12) << "95% CI";
   outp << left << setw(10) << "SD";
   outp << left << setw(8) << "Best";
-  outp << left << setw(10) << "% Correct";
+  outp << left << setw(12) << "% Correct";
+  outp << left << setw(10) << "AvgStates";
   outp << endl;
   return 0;
 }
@@ -188,13 +189,24 @@ double report(ofstream &outp, int run, int rptNum, bool biggerBetter) {
       calcStats<double>(fits, biggerBetter);  // {mean, stdDev, 95CI, best}
   multiStream printAndSave(cout, outp);
 
+  // Calculate average number of states
+  double avgStates = 0.0;
+  for (int idx = 0; idx < popsize; ++idx) {
+    avgStates += pop[idx].getNumStates();
+  }
+  avgStates /= popsize;
+
   printAndSave << left << setw(5) << run;
   printAndSave << left << setw(4) << rptNum;
   printAndSave << left << setw(10) << stats[0];
   printAndSave << left << setw(12) << stats[2];
   printAndSave << left << setw(10) << stats[1];
   printAndSave << left << setw(8) << stats[3];
-  printAndSave << left << setw(8) << (stats[3] / seqLen) * 100 << "%";
+  // Format percentage with % as part of the field
+  ostringstream percStream;
+  percStream << fixed << setprecision(2) << (stats[3] / seqLen) * 100 << "%";
+  printAndSave << left << setw(12) << percStream.str();
+  printAndSave << left << setw(10) << avgStates;
   printAndSave << "\n";
   return stats[3];
 }
@@ -267,7 +279,25 @@ int matingEvent(bool biggerBetter, double cullingRate) {
     doubleFits = sortedDoubleFits;
     selectByRank();
     if (cullingRate > 0.0) {
+      // Print current SDA states
+      cout << "Current SDA states: ";
+      for (int i = 0; i < popsize; ++i) {
+        if (i != 0) {
+          cout << ", ";
+        }
+        cout << pop[i].getNumStates();
+      }
+      cout << endl;
       culling(cullingRate, BIGGER_BETTER);
+      // Print current SDA states
+      cout << "Current SDA states: ";
+      for (int i = 0; i < popsize; ++i) {
+        if (i != 0) {
+          cout << ", ";
+        }
+        cout << pop[i].getNumStates();
+      }
+      cout << endl;
     }
   }
 
