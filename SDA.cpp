@@ -96,21 +96,31 @@ int SDA::randomize() {
 
   initChar = (int)lrand48() % numChars;
 
-  vector<int> oneResponse;
-  oneResponse.reserve(maxRespLen);
-  int respLen;
   numStates = initNumStates;
+  initState = 0;
+  // Clear existing vectors to reset state properly
+  transitions.clear();
+  responses.clear();
+  vector<int> oneStateTrans;
+  vector<vector<int>> oneStateResps;
+  vector<int> oneResponse;
 
   for (int state = 0; state < numStates; ++state) {
+    oneStateTrans.clear();
+    oneStateResps.clear();
     for (int trans = 0; trans < numChars; ++trans) {
-      transitions[state][trans] = (int)lrand48() % numStates;
+      // Random transition
+      oneStateTrans.push_back((int)lrand48() % numStates);
+      // Random response
+      int respLen = (int)lrand48() % maxRespLen + 1;
       oneResponse.clear();
-      respLen = (int)lrand48() % maxRespLen + 1;
       for (int val = 0; val < respLen; ++val) {
         oneResponse.push_back((int)lrand48() % numChars);
       }
-      responses[state][trans] = oneResponse;
+      oneStateResps.push_back(oneResponse);
     }
+    transitions.push_back(oneStateTrans);
+    responses.push_back(oneStateResps);
   }
   if (verbose) cout << "SDA Randomized." << endl;
   return 0;
