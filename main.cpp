@@ -51,11 +51,15 @@ int initAlg(const string &pathToSeqs) {
   relativeFits.resize(popsize);
   doubleRelativeFits.resize(popsize * 2);
 
-  pop = new SDA[popsize];
+  // pop = new SDA[popsize];
+  pop.resize(popsize);
   doublePop.reserve(popsize * 2);
-  for (int idx = 0; idx < popsize; ++idx) {
-    pop[idx] = SDA(sdaStates, numChars, 2, seqLen);
+  for (auto &sda : pop) {
+    sda = SDA(sdaStates, numChars, 2, seqLen);
   }
+  // for (int idx = 0; idx < popsize; ++idx) {
+  //   pop[idx] = SDA(sdaStates, numChars, 2, seqLen);
+  // }
 
   testSeq.reserve(seqLen);
   charSeq.reserve(seqLen);
@@ -124,6 +128,8 @@ int initPop(int run) {
     cout << "Beginning Run " << run << " of " << runs << endl;
   }
   fits.clear();
+  populationBestIdx = -1;
+  populationBestFit = (BIGGER_BETTER ? 0.0 : MAXFLOAT);
   for (int idx = 0; idx < popsize; ++idx) {
     pop[idx].randomize();
     fits.push_back(fitness(pop[idx]));
@@ -151,9 +157,8 @@ int random_range(int min, int max) {
 
 int calcRelativeFitness() {
   doubleRelativeFits.clear();
-  doubleRelativeFits.resize(popsize * 2);
+  doubleRelativeFits.resize(popsize * 2, 0.0);
   for (int idx = 0; idx < popsize * 2; ++idx) {
-    doubleRelativeFits.push_back(0.0);
     for (int i = 0; i < tournSize; ++i) {
       int opponentIdx = random_range(0, popsize * 2 - 1);
       while (opponentIdx == idx) {
@@ -351,30 +356,32 @@ int selectByRoulette() {
 }
 
 int selectByRank() {
+  pop.resize(popsize);
   copy(doubleFits.begin(), doubleFits.begin() + popsize, fits.begin());
-  copy(doublePop.begin(), doublePop.begin() + popsize, pop);
+  copy(doublePop.begin(), doublePop.begin() + popsize, pop.begin());
+  // copy(doublePop.begin(), doublePop.begin() + popsize, pop);
   return 0;
 }
 
-int keepBest(double percent, bool biggerBetter) {
-  int numToKeep = (int)(popsize * percent);
-  vector<int> bestIdxs;
-  bestIdxs.reserve(numToKeep);
-  bestIdxs = tournSelect(numToKeep, !biggerBetter);
+// int keepBest(double percent, bool biggerBetter) {
+//   int numToKeep = (int)(popsize * percent);
+//   vector<int> bestIdxs;
+//   bestIdxs.reserve(numToKeep);
+//   bestIdxs = tournSelect(numToKeep, !biggerBetter);
 
-  vector<SDA> bestSDAs;
-  bestSDAs.reserve(numToKeep);
-  vector<double> bestFits;
-  bestFits.reserve(numToKeep);
-  for (int idx : bestIdxs) {
-    bestSDAs.push_back(pop[idx]);
-    bestFits.push_back(fits[idx]);
-  }
+//   vector<SDA> bestSDAs;
+//   bestSDAs.reserve(numToKeep);
+//   vector<double> bestFits;
+//   bestFits.reserve(numToKeep);
+//   for (int idx : bestIdxs) {
+//     bestSDAs.push_back(pop[idx]);
+//     bestFits.push_back(fits[idx]);
+//   }
 
-  copy(bestFits.begin(), bestFits.end(), fits.begin());
-  copy(bestSDAs.begin(), bestSDAs.end(), pop);
-  return 0;
-}
+//   copy(bestFits.begin(), bestFits.end(), fits.begin());
+//   copy(bestSDAs.begin(), bestSDAs.end(), pop);
+//   return 0;
+// }
 
 vector<int> tournSelect(int size, bool decreasing) {
   vector<int> tournIdxs;
@@ -647,7 +654,7 @@ int main(int argc, char *argv[]) {
   best.open(string(pathToOut) + "./best.dat", ios::out);
   expReport(best, bests, expBestSDA, BIGGER_BETTER);
   best.close();
-  delete[] pop;
+  // delete[] pop;
   cout << "Program Completed Successfully!" << endl;
   return 0;
 }

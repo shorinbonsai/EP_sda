@@ -54,7 +54,8 @@ vector<int> testSeq;
 vector<char> charSeq;
 int seqLen;
 
-SDA *pop;
+// SDA *pop;
+vector<SDA> pop;
 vector<SDA> doublePop;
 vector<double> fits;
 vector<double> doubleFits;

@@ -8,7 +8,8 @@
         "string_view": "cpp",
         "iosfwd": "cpp",
         "iomanip": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "vector": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++-11",
     "ocaml.sandbox": {

@@ -313,6 +313,14 @@ int SDA::deleteState() {
       }
     }
   }
+  for (int s = 0; s < numStates; ++s) {
+    for (int c = 0; c < numChars; ++c) {
+      if (transitions[s][c] >=
+          numStates) {  // After deletion, numStates is decremented
+        transitions[s][c] = numStates - 1;
+      }
+    }
+  }
 
   // Update initState if needed
   if (initState == delete_state) {
