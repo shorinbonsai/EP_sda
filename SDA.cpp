@@ -1,7 +1,7 @@
 #include "SDA.h"
 
 SDA::SDA(int numStates, int numChars, int maxRespLen, int outputLen,
-         int initState, bool verbose, int maxStates) {
+         int maxStates, int initState, bool verbose) {
   initChar = -1;
   this->numStates = numStates;
   this->initNumStates = numStates;
@@ -28,7 +28,7 @@ SDA::SDA(int numStates, int numChars, int maxRespLen, int outputLen,
   if (verbose) cout << "SDA made with " << numStates << " numStates." << endl;
 }
 
-SDA::SDA() : SDA(10, 2, 2, 1000) {}
+SDA::SDA() : SDA(10, 2, 2, 1000, 20) {}
 
 SDA::SDA(const SDA &other)
     : maxStates(other.maxStates),
@@ -367,35 +367,50 @@ int SDA::mutate(int numMuts) {
 
   int mutPt, respSize;
   vector<int> oneResponse;
+  int tally = 0;
 
   for (int mut = 0; mut < tmpMut; ++mut) {
-    double randVal = drand48();
-    if (randVal < 0.04) {  // 4% chance of mutating initial character
-      initChar = (int)lrand48() % numChars;
-      if (verbose) {
-        cout << "Completed mutation on the SDA's initial character." << endl;
-      }
-      return 0;
-    } else if (0.04 <= randVal && randVal < 0.12) {
-      deleteState();
-    } else if (0.12 <= randVal && randVal < 0.20) {
-      addState();
-    } else {
-      mutPt = (int)lrand48() % numStates;
-      int transNum = (int)lrand48() % numChars;
-
-      if ((int)lrand48() % 2 == 0) {  // Mutate transition (50%)
-        transitions.at(mutPt).at(transNum) = (int)lrand48() % numStates;
-      } else {  // Mutate response (50%)
-        oneResponse.clear();
-        respSize = (int)lrand48() % maxRespLen + 1;
-        for (int i = 0; i < respSize; ++i) {
-          oneResponse.push_back((int)lrand48() % numChars);
+    int result = -1;
+    while (result != 0) {
+      double randVal = drand48();
+      if (randVal < 0.04) {  // 4% chance of mutating initial character
+        initChar = (int)lrand48() % numChars;
+        if (verbose) {
+          cout << "Completed mutation on the SDA's initial character." << endl;
         }
-        responses.at(mutPt).at(transNum) = oneResponse;
+        return 0;
+      } else if (0.04 <= randVal && randVal < 0.12) {
+        result = deleteState();
+        // if (result == -1) {
+        //   tally++;
+        // }
+      } else if (0.12 <= randVal && randVal < 0.20) {
+        result = addState();
+        // if (result == -1) {
+        //   tally++;
+        // }
+      } else {
+        result = 0;
+        mutPt = (int)lrand48() % numStates;
+        int transNum = (int)lrand48() % numChars;
+
+        if ((int)lrand48() % 2 == 0) {  // Mutate transition (50%)
+          transitions.at(mutPt).at(transNum) = (int)lrand48() % numStates;
+        } else {  // Mutate response (50%)
+          oneResponse.clear();
+          respSize = (int)lrand48() % maxRespLen + 1;
+          for (int i = 0; i < respSize; ++i) {
+            oneResponse.push_back((int)lrand48() % numChars);
+          }
+          responses.at(mutPt).at(transNum) = oneResponse;
+        }
       }
     }
   }
+  // if (tally != 0) {
+  //   cout << "Error in SDA Class: mutate(...): mutation failed " << tally
+  //        << " times." << endl;
+  // }
   return 0;
 }
 

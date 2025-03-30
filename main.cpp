@@ -55,7 +55,7 @@ int initAlg(const string &pathToSeqs) {
   pop.resize(popsize);
   doublePop.reserve(popsize * 2);
   for (auto &sda : pop) {
-    sda = SDA(sdaStates, numChars, 2, seqLen);
+    sda = SDA(sdaStates, numChars, 2, seqLen, 2 * sdaStates);
   }
   // for (int idx = 0; idx < popsize; ++idx) {
   //   pop[idx] = SDA(sdaStates, numChars, 2, seqLen);
@@ -587,7 +587,7 @@ int main(int argc, char *argv[]) {
   double expBestFit = (BIGGER_BETTER ? 0 : MAXFLOAT);
 
   initAlg(pathToSeqs);
-  SDA expBestSDA = SDA(sdaStates, numChars, 2, seqLen);
+  SDA expBestSDA = SDA(sdaStates, numChars, 2, seqLen, 2 * sdaStates);
   cmdLineIntro(cout);
   char dynamicMessage[20];
   sprintf(pathToOut,
