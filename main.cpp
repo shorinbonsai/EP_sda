@@ -41,7 +41,6 @@ int getArgs(char *arguments[]) {
 }
 
 int initAlg(const string &pathToSeqs) {
-  // srand48(time(nullptr));  // use system time as random number seed
   srand48(seed);  // read the random number seed
   // vector<vector<int>> sequences = getSequences(pathToSeqs);
   goalSeq = getSequences(pathToSeqs)[seqNum];
@@ -51,15 +50,11 @@ int initAlg(const string &pathToSeqs) {
   relativeFits.resize(popsize);
   doubleRelativeFits.resize(popsize * 2);
 
-  // pop = new SDA[popsize];
   pop.resize(popsize);
   doublePop.reserve(popsize * 2);
   for (auto &sda : pop) {
-    sda = SDA(sdaStates, numChars, 2, seqLen, 2 * sdaStates);
+    sda = SDA(sdaStates, numChars, 2, seqLen, 1.2 * sdaStates);
   }
-  // for (int idx = 0; idx < popsize; ++idx) {
-  //   pop[idx] = SDA(sdaStates, numChars, 2, seqLen);
-  // }
 
   testSeq.reserve(seqLen);
   charSeq.reserve(seqLen);
@@ -149,6 +144,8 @@ double fitness(SDA &sda) {
   return val;
 }
 
+double diversify(SDA &sda, SDA &best) { return 0.0; }
+
 int random_range(int min, int max) {
   long range = (long)max - min + 1;
   // Get a random number and scale it to the range
@@ -166,10 +163,12 @@ int calcRelativeFitness() {
       }
       if (BIGGER_BETTER && doubleFits[idx] > doubleFits[opponentIdx]) {
         doubleRelativeFits[idx] += 1.0;
-      }
-      if (!BIGGER_BETTER && doubleFits[idx] < doubleFits[opponentIdx]) {
-        doubleRelativeFits[idx] += 1.0;
-      }
+      } else if(doubleFits[idx] == doubleFits[opponentIdx]) {
+        doubleRelativeFits[idx] += 0.5;
+      } 
+      // if (!BIGGER_BETTER && doubleFits[idx] < doubleFits[opponentIdx]) {
+      //   doubleRelativeFits[idx] += 1.0;
+      // }
     }
   }
 
@@ -243,7 +242,8 @@ vector<double> calcStats(vector<T> vals, bool biggerBetter) {
   return {mean, stdDev, CI95, bestVal};  // {mean, stdDev, 95CI, best}
 }
 
-int matingEvent(bool biggerBetter, double cullingRate) {
+int matingEvent(bool biggerBetter, double cullingRate, int generation,
+                ofstream &tournStats) {
   SDA child1;
   doublePop.clear();
   doubleFits.clear();
@@ -262,11 +262,12 @@ int matingEvent(bool biggerBetter, double cullingRate) {
   calcRelativeFitness();
 
   if (ROULETTE) {
-    // Select by roulette wheel
-    selectByRoulette();
-    if (cullingRate > 0.0) {
-      culling(cullingRate, BIGGER_BETTER);
-    }
+    return -1;
+    // // Select by roulette wheel
+    // selectByRoulette();
+    // if (cullingRate > 0.0) {
+    //   culling(cullingRate, BIGGER_BETTER);
+    // }
   } else {
     vector<int> indices(doublePop.size());
     iota(indices.begin(), indices.end(), 0);
@@ -276,33 +277,55 @@ int matingEvent(bool biggerBetter, double cullingRate) {
     // Reorder doublePop and doubleFits based on sorted indices
     vector<SDA> sortedDoublePop;
     vector<double> sortedDoubleFits;
+    vector<double> sortedDoubleRelativeFits;
     for (int idx : indices) {
       sortedDoublePop.push_back(doublePop[idx]);
       sortedDoubleFits.push_back(doubleFits[idx]);
+      sortedDoubleRelativeFits.push_back(doubleRelativeFits[idx]);
     }
     doublePop = sortedDoublePop;
     doubleFits = sortedDoubleFits;
+    doubleRelativeFits = sortedDoubleRelativeFits;
+    if (generation % 10 == 0) { 
+      tournStats << "Event at Generation " << generation << "\n";
+      tournStats << "Relative Fitness Values: ";
+      for (int i = 0; i < doubleRelativeFits.size(); ++i) {
+        if (i != 0) tournStats << ", ";
+        tournStats << doubleRelativeFits[i];
+      }
+      double avg = accumulate(doubleRelativeFits.begin(), doubleRelativeFits.end(), 0.0) /
+                   doubleRelativeFits.size();
+      tournStats << "\nAverage: " << avg << "\n";
+      for (int i = 0; i < doubleFits.size(); ++i) {
+        if (i != 0) tournStats << ", ";
+        tournStats << doubleFits[i];
+      }
+      tournStats << "\n\n";
+    }
+
     selectByRank();
+    // relativeFits.clear();
+    // relativeFits.resize(popsize);
+    // for (int idx = 0; idx < popsize; ++idx) {
+    //   relativeFits[idx] = doubleRelativeFits[idx];
+    // }
     if (cullingRate > 0.0) {
-      // Print current SDA states
-      cout << "Current SDA states: ";
-      for (int i = 0; i < popsize; ++i) {
-        if (i != 0) {
-          cout << ", ";
-        }
-        cout << pop[i].getNumStates();
-      }
-      cout << endl;
+      // Write to tournStats
+      // tournStats << "Culling Event at Generation " << generation << "\n";
+      // tournStats << "Double Relative Fitness Values: ";
+      // for (int i = 0; i < relativeFits.size(); ++i) {
+      //   if (i != 0) tournStats << ", ";
+      //   tournStats << relativeFits[i];
+      // }
+      // double avg = accumulate(relativeFits.begin(), relativeFits.end(), 0.0) /
+      //              relativeFits.size();
+      // tournStats << "\nAverage: " << avg << "\n";
+      // for (int i = 0; i < fits.size(); ++i) {
+      //   if (i != 0) tournStats << ", ";
+      //   tournStats << fits[i];
+      // }
+      // tournStats << "\n\n";
       culling(cullingRate, BIGGER_BETTER);
-      // Print current SDA states
-      cout << "Current SDA states: ";
-      for (int i = 0; i < popsize; ++i) {
-        if (i != 0) {
-          cout << ", ";
-        }
-        cout << pop[i].getNumStates();
-      }
-      cout << endl;
     }
   }
 
@@ -362,26 +385,6 @@ int selectByRank() {
   // copy(doublePop.begin(), doublePop.begin() + popsize, pop);
   return 0;
 }
-
-// int keepBest(double percent, bool biggerBetter) {
-//   int numToKeep = (int)(popsize * percent);
-//   vector<int> bestIdxs;
-//   bestIdxs.reserve(numToKeep);
-//   bestIdxs = tournSelect(numToKeep, !biggerBetter);
-
-//   vector<SDA> bestSDAs;
-//   bestSDAs.reserve(numToKeep);
-//   vector<double> bestFits;
-//   bestFits.reserve(numToKeep);
-//   for (int idx : bestIdxs) {
-//     bestSDAs.push_back(pop[idx]);
-//     bestFits.push_back(fits[idx]);
-//   }
-
-//   copy(bestFits.begin(), bestFits.end(), fits.begin());
-//   copy(bestSDAs.begin(), bestSDAs.end(), pop);
-//   return 0;
-// }
 
 vector<int> tournSelect(int size, bool decreasing) {
   vector<int> tournIdxs;
@@ -580,14 +583,14 @@ int main(int argc, char *argv[]) {
   getArgs(argv);
   string pathToSeqs = "./Sequences.dat";
   string filename;
-  ofstream runStats, expStats, readMe;
+  ofstream runStats, expStats, readMe, tournStats;
 
   vector<double> bests;
   bests.reserve(runs);
   double expBestFit = (BIGGER_BETTER ? 0 : MAXFLOAT);
 
   initAlg(pathToSeqs);
-  SDA expBestSDA = SDA(sdaStates, numChars, 2, seqLen, 2 * sdaStates);
+  SDA expBestSDA = SDA(sdaStates, numChars, 2, seqLen, 1.2 * sdaStates);
   cmdLineIntro(cout);
   char dynamicMessage[20];
   sprintf(pathToOut,
@@ -596,7 +599,6 @@ int main(int argc, char *argv[]) {
           seqNum, maxGens, popsize, sdaStates, tournSize, numMuts,
           (int)(cullingRate * 100), CULLING_EVERY);
   filesystem::create_directories(pathToOut);
-  // mkdir(pathToOut, 0777);
   expStats.open(string(pathToOut) + "./exp.dat", ios::out);
   readMe.open(string(pathToOut) + "./read.me", ios::out);
   makeReadMe(readMe);
@@ -609,31 +611,29 @@ int main(int argc, char *argv[]) {
     sprintf(runNumStr, "%02d", run);
     filename = string(pathToOut) + "run" + string(runNumStr) + ".dat";
     runStats.open(filename, ios::out);
+    tournStats.open(string(pathToOut) + "./tourn" + string(runNumStr) + ".dat",
+                    ios::out);
     printExpStatsHeader(cout);
     printExpStatsHeader(runStats);
     report(runStats, run, 0, BIGGER_BETTER);
 
     int gen = 1;
-    int stallCount = 0;
     double best = (BIGGER_BETTER ? 0 : MAXFLOAT);
     while (gen <= maxGens) {
       int genRatio = (int)(100 * (gen / (double)maxGens));
       if (gen % (int)(CULLING_EVERY * REPORT_EVERY) == 0 && genRatio > 30 &&
           genRatio < 95) {
         cout << "Culling at generation " << gen << endl;
-        matingEvent(BIGGER_BETTER, cullingRate);
+        matingEvent(BIGGER_BETTER, cullingRate, gen, tournStats);
 
       } else {
-        matingEvent(BIGGER_BETTER, 0.0);
+        matingEvent(BIGGER_BETTER, 0.0, gen, tournStats);
       }
 
       if (gen % REPORT_EVERY == 0) {
         tmp = report(runStats, run, (int)gen / (REPORT_EVERY), BIGGER_BETTER);
         if ((BIGGER_BETTER && tmp > best) || (!BIGGER_BETTER && tmp < best)) {
           best = tmp;
-          stallCount = 0;
-        } else {
-          stallCount++;
         }
       }
 
@@ -648,6 +648,7 @@ int main(int argc, char *argv[]) {
     }
     bests.push_back(fits[tmp]);
     runStats.close();
+    tournStats.close();
   }
 
   ofstream best;

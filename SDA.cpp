@@ -359,10 +359,10 @@ int SDA::mutate(int numMuts) {
             "initialized.";
     return -1;
   }
-  // Randomly choose number of mutations if numMuts is 0 (1-3 mutations)
+  // Randomly choose number of mutations if numMuts is 0 (1-5 mutations)
   int tmpMut = numMuts;
   if (numMuts == 0) {
-    tmpMut = (int)lrand48() % 3 + 1;
+    tmpMut = (int)lrand48() % 5 + 1;
   }
 
   int mutPt, respSize;
