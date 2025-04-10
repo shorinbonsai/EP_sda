@@ -45,9 +45,9 @@ double mutationRate;
 double cullingRate;
 bool randomCulling;
 int populationBestIdx;
-double populationBestFit; // current best population fitness
+double populationBestFit;  // current best population fitness
 double prevBestFitness = 0;
-int RICounter; // Report Interval counter
+int RICounter;  // Report Interval counter
 
 vector<int> goalSeq;
 vector<int> testSeq;
@@ -61,6 +61,7 @@ vector<double> fits;
 vector<double> doubleFits;
 vector<double> relativeFits;
 vector<double> doubleRelativeFits;
+vector<int> noveltyFits;
 
 char pathToOut[150];
 
@@ -72,9 +73,11 @@ int cmdLineIntro(ostream &outp);
 int makeReadMe(ostream &outp);
 int initPop(int run);
 double fitness(SDA &sda);
+int calcNoveltyFit(int idx);
 int printExpStatsHeader(ostream &outp);
 double report(ofstream &outp, int run, int rptNum, bool biggerBetter);
-template <class T> vector<double> calcStats(vector<T> vals, bool biggerBetter);
+template <class T>
+vector<double> calcStats(vector<T> vals, bool biggerBetter);
 int matingEvent(bool biggerBetter, double cullingRate);
 vector<int> tournSelect(int size, bool decreasing);
 bool compareFitness(int popIdx1, int popIdx2);
@@ -100,16 +103,17 @@ int printIdxsOfVector(T1 &outp, vector<T2> vec, const vector<int> &idxs,
 
 // Helper Class
 class multiStream : public ostream {
-public:
+ public:
   multiStream(ostream &os1, ostream &os2) : os1(os1), os2(os2) {}
 
-  template <class T> multiStream &operator<<(const T &x) {
+  template <class T>
+  multiStream &operator<<(const T &x) {
     os1 << x;
     os2 << x;
     return *this;
   }
 
-private:
+ private:
   ostream &os1;
   ostream &os2;
 };

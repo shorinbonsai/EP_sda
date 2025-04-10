@@ -129,6 +129,14 @@ int initPop(int run) {
     pop[idx].randomize();
     fits.push_back(fitness(pop[idx]));
   }
+  for (int i = 0; i < popsize * 2; ++i) {
+    noveltyFits.push_back(-1);
+  }
+
+  // for (int idx = 0; idx < popsize; ++idx) {
+  //   noveltyFits[idx] = calcNoveltyFit(idx);
+  // }
+
   cout << "Population Generated!" << endl;
   return 0;
 }
@@ -141,6 +149,54 @@ double fitness(SDA &sda) {
       val += 1;
     }
   }
+  return val;
+}
+
+int calcNoveltyFit(int idx) {
+  int val = 0;
+
+  vector<int> idx_same_match_fit;
+  idx_same_match_fit.reserve(popsize * 2);
+  for (int i = 0; i < popsize * 2; ++i) {
+    if (i != idx && doubleFits[i] == doubleFits[idx]) {
+      idx_same_match_fit.push_back(i);
+    }
+  }
+
+  vector<vector<int>> strings_same_match_fit;
+  strings_same_match_fit.reserve(idx_same_match_fit.size());
+
+  for (int i : idx_same_match_fit) {
+    doublePop[i].fillOutput(testSeq);
+    strings_same_match_fit.push_back(testSeq);
+  }
+
+  doublePop[idx].fillOutput(testSeq);
+  for (int i = 0; i < goalSeq.size(); ++i) {
+    if (testSeq[i] != goalSeq[i]) {
+      for (vector<int> vec : strings_same_match_fit) {
+        if (testSeq[i] == vec[i]) {
+          val++;
+        }
+      }
+    }
+  }
+
+  return val;
+}
+
+double updateNoveltyFit(int forIdx, vector<int> cmprStr, int score) {
+  pop[forIdx].fillOutput(testSeq);
+  int val = noveltyFits[forIdx];
+
+  for (int i = 0; i < goalSeq.size(); ++i) {
+    if (testSeq[i] != goalSeq[i]) {
+      if (testSeq[i] == cmprStr[i]) {
+        val += score;
+      }
+    }
+  }
+
   return val;
 }
 
@@ -163,9 +219,13 @@ int calcRelativeFitness() {
       }
       if (BIGGER_BETTER && doubleFits[idx] > doubleFits[opponentIdx]) {
         doubleRelativeFits[idx] += 1.0;
-      } else if(doubleFits[idx] == doubleFits[opponentIdx]) {
-        doubleRelativeFits[idx] += 0.5;
-      } 
+      } else if (doubleFits[idx] == doubleFits[opponentIdx]) {
+        if (noveltyFits[idx] < noveltyFits[opponentIdx]) {
+          doubleRelativeFits[idx] += 1.0;
+        } else if (noveltyFits[idx] == noveltyFits[opponentIdx]) {
+          doubleRelativeFits[idx] += 0.5;
+        }
+      }
       // if (!BIGGER_BETTER && doubleFits[idx] < doubleFits[opponentIdx]) {
       //   doubleRelativeFits[idx] += 1.0;
       // }
@@ -258,16 +318,14 @@ int matingEvent(bool biggerBetter, double cullingRate, int generation,
     doublePop.push_back(child1);
     doubleFits.push_back(fitness(child1));
   }
+  for (int i = 0; i < popsize * 2; ++i) {
+    noveltyFits[i] = calcNoveltyFit(i);
+  }
 
   calcRelativeFitness();
 
   if (ROULETTE) {
     return -1;
-    // // Select by roulette wheel
-    // selectByRoulette();
-    // if (cullingRate > 0.0) {
-    //   culling(cullingRate, BIGGER_BETTER);
-    // }
   } else {
     vector<int> indices(doublePop.size());
     iota(indices.begin(), indices.end(), 0);
@@ -278,27 +336,35 @@ int matingEvent(bool biggerBetter, double cullingRate, int generation,
     vector<SDA> sortedDoublePop;
     vector<double> sortedDoubleFits;
     vector<double> sortedDoubleRelativeFits;
+    vector<int> sortedNoveltyFits;
     for (int idx : indices) {
       sortedDoublePop.push_back(doublePop[idx]);
       sortedDoubleFits.push_back(doubleFits[idx]);
       sortedDoubleRelativeFits.push_back(doubleRelativeFits[idx]);
+      sortedNoveltyFits.push_back(noveltyFits[idx]);
     }
     doublePop = sortedDoublePop;
     doubleFits = sortedDoubleFits;
     doubleRelativeFits = sortedDoubleRelativeFits;
-    if (generation % 10 == 0) { 
+    if (generation % 20 == 0 || generation == 1 || generation % 101 == 0) {
       tournStats << "Event at Generation " << generation << "\n";
       tournStats << "Relative Fitness Values: ";
       for (int i = 0; i < doubleRelativeFits.size(); ++i) {
         if (i != 0) tournStats << ", ";
         tournStats << doubleRelativeFits[i];
       }
-      double avg = accumulate(doubleRelativeFits.begin(), doubleRelativeFits.end(), 0.0) /
+      double avg = accumulate(doubleRelativeFits.begin(),
+                              doubleRelativeFits.end(), 0.0) /
                    doubleRelativeFits.size();
       tournStats << "\nAverage: " << avg << "\n";
       for (int i = 0; i < doubleFits.size(); ++i) {
         if (i != 0) tournStats << ", ";
         tournStats << doubleFits[i];
+      }
+      tournStats << "\nNoveltyFits\n";
+      for (int i = 0; i < sortedNoveltyFits.size(); ++i) {
+        if (i != 0) tournStats << ", ";
+        tournStats << sortedNoveltyFits[i];
       }
       tournStats << "\n\n";
     }
@@ -317,7 +383,8 @@ int matingEvent(bool biggerBetter, double cullingRate, int generation,
       //   if (i != 0) tournStats << ", ";
       //   tournStats << relativeFits[i];
       // }
-      // double avg = accumulate(relativeFits.begin(), relativeFits.end(), 0.0) /
+      // double avg = accumulate(relativeFits.begin(), relativeFits.end(), 0.0)
+      // /
       //              relativeFits.size();
       // tournStats << "\nAverage: " << avg << "\n";
       // for (int i = 0; i < fits.size(); ++i) {
