@@ -373,22 +373,16 @@ int SDA::mutate(int numMuts) {
     int result = -1;
     while (result != 0) {
       double randVal = drand48();
-      if (randVal < 0.04) {  // 4% chance of mutating initial character
+      if (randVal < 0.1) {  // 4% chance of mutating initial character
         initChar = (int)lrand48() % numChars;
         if (verbose) {
           cout << "Completed mutation on the SDA's initial character." << endl;
         }
         return 0;
-      } else if (0.04 <= randVal && randVal < 0.12) {
+      } else if (0.1 <= randVal && randVal < 0.15) {
         result = deleteState();
-        // if (result == -1) {
-        //   tally++;
-        // }
-      } else if (0.12 <= randVal && randVal < 0.20) {
+      } else if (0.15 <= randVal && randVal < 0.20) {
         result = addState();
-        // if (result == -1) {
-        //   tally++;
-        // }
       } else {
         result = 0;
         mutPt = (int)lrand48() % numStates;

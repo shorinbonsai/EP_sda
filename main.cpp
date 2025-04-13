@@ -661,7 +661,7 @@ int main(int argc, char *argv[]) {
   cmdLineIntro(cout);
   char dynamicMessage[20];
   sprintf(pathToOut,
-          "./SQMOut/SQMatch on Seq%d with %dGens, %04dPS, %02dSt, "
+          "./SQMOutMutChanges/SQMatch on Seq%d with %dGens, %04dPS, %02dSt, "
           " %dTS, %dMuts, %02d%%CuR, %dCE/",
           seqNum, maxGens, popsize, sdaStates, tournSize, numMuts,
           (int)(cullingRate * 100), CULLING_EVERY);
