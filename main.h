@@ -61,7 +61,7 @@ vector<double> fits;
 vector<double> doubleFits;
 vector<double> relativeFits;
 vector<double> doubleRelativeFits;
-vector<int> noveltyFits;
+//vector<int> noveltyFits;
 
 char pathToOut[150];
 

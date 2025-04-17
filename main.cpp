@@ -53,7 +53,7 @@ int initAlg(const string &pathToSeqs) {
   pop.resize(popsize);
   doublePop.reserve(popsize * 2);
   for (auto &sda : pop) {
-    sda = SDA(sdaStates, numChars, 2, seqLen, 1.2 * sdaStates);
+    sda = SDA(sdaStates, numChars, 2, seqLen, 1.5 * sdaStates);
   }
 
   testSeq.reserve(seqLen);
@@ -129,9 +129,9 @@ int initPop(int run) {
     pop[idx].randomize();
     fits.push_back(fitness(pop[idx]));
   }
-  for (int i = 0; i < popsize * 2; ++i) {
-    noveltyFits.push_back(-1);
-  }
+  // for (int i = 0; i < popsize * 2; ++i) {
+  //   noveltyFits.push_back(-1);
+  // }
 
   // for (int idx = 0; idx < popsize; ++idx) {
   //   noveltyFits[idx] = calcNoveltyFit(idx);
@@ -152,6 +152,7 @@ double fitness(SDA &sda) {
   return val;
 }
 
+/*
 int calcNoveltyFit(int idx) {
   int val = 0;
 
@@ -187,7 +188,7 @@ int calcNoveltyFit(int idx) {
 
 double updateNoveltyFit(int forIdx, vector<int> cmprStr, int score) {
   pop[forIdx].fillOutput(testSeq);
-  int val = noveltyFits[forIdx];
+  //int val = noveltyFits[forIdx];
 
   for (int i = 0; i < goalSeq.size(); ++i) {
     if (testSeq[i] != goalSeq[i]) {
@@ -199,6 +200,7 @@ double updateNoveltyFit(int forIdx, vector<int> cmprStr, int score) {
 
   return val;
 }
+*/
 
 double diversify(SDA &sda, SDA &best) { return 0.0; }
 
@@ -220,12 +222,15 @@ int calcRelativeFitness() {
       if (BIGGER_BETTER && doubleFits[idx] > doubleFits[opponentIdx]) {
         doubleRelativeFits[idx] += 1.0;
       } else if (doubleFits[idx] == doubleFits[opponentIdx]) {
-        if (noveltyFits[idx] < noveltyFits[opponentIdx]) {
-          doubleRelativeFits[idx] += 1.0;
-        } else if (noveltyFits[idx] == noveltyFits[opponentIdx]) {
-          doubleRelativeFits[idx] += 0.5;
-        }
+        doubleRelativeFits[idx] += 0.5;
       }
+      // else if (doubleFits[idx] == doubleFits[opponentIdx]) {
+      //  if (noveltyFits[idx] < noveltyFits[opponentIdx]) {
+      //    doubleRelativeFits[idx] += 1.0;
+      //  } else if (noveltyFits[idx] == noveltyFits[opponentIdx]) {
+      //    doubleRelativeFits[idx] += 0.5;
+      //  }
+      //}
       // if (!BIGGER_BETTER && doubleFits[idx] < doubleFits[opponentIdx]) {
       //   doubleRelativeFits[idx] += 1.0;
       // }
@@ -318,9 +323,9 @@ int matingEvent(bool biggerBetter, double cullingRate, int generation,
     doublePop.push_back(child1);
     doubleFits.push_back(fitness(child1));
   }
-  for (int i = 0; i < popsize * 2; ++i) {
-    noveltyFits[i] = calcNoveltyFit(i);
-  }
+  // for (int i = 0; i < popsize * 2; ++i) {
+  //   noveltyFits[i] = calcNoveltyFit(i);
+  // }
 
   calcRelativeFitness();
 
@@ -336,12 +341,12 @@ int matingEvent(bool biggerBetter, double cullingRate, int generation,
     vector<SDA> sortedDoublePop;
     vector<double> sortedDoubleFits;
     vector<double> sortedDoubleRelativeFits;
-    vector<int> sortedNoveltyFits;
+    // vector<int> sortedNoveltyFits;
     for (int idx : indices) {
       sortedDoublePop.push_back(doublePop[idx]);
       sortedDoubleFits.push_back(doubleFits[idx]);
       sortedDoubleRelativeFits.push_back(doubleRelativeFits[idx]);
-      sortedNoveltyFits.push_back(noveltyFits[idx]);
+      // sortedNoveltyFits.push_back(noveltyFits[idx]);
     }
     doublePop = sortedDoublePop;
     doubleFits = sortedDoubleFits;
@@ -361,11 +366,11 @@ int matingEvent(bool biggerBetter, double cullingRate, int generation,
         if (i != 0) tournStats << ", ";
         tournStats << doubleFits[i];
       }
-      tournStats << "\nNoveltyFits\n";
-      for (int i = 0; i < sortedNoveltyFits.size(); ++i) {
-        if (i != 0) tournStats << ", ";
-        tournStats << sortedNoveltyFits[i];
-      }
+      // tournStats << "\nNoveltyFits\n";
+      // for (int i = 0; i < sortedNoveltyFits.size(); ++i) {
+      //   if (i != 0) tournStats << ", ";
+      //   tournStats << sortedNoveltyFits[i];
+      // }
       tournStats << "\n\n";
     }
 
@@ -657,11 +662,11 @@ int main(int argc, char *argv[]) {
   double expBestFit = (BIGGER_BETTER ? 0 : MAXFLOAT);
 
   initAlg(pathToSeqs);
-  SDA expBestSDA = SDA(sdaStates, numChars, 2, seqLen, 1.2 * sdaStates);
+  SDA expBestSDA = SDA(sdaStates, numChars, 2, seqLen, 1.5 * sdaStates);
   cmdLineIntro(cout);
   char dynamicMessage[20];
   sprintf(pathToOut,
-          "./SQMOutMutChanges/SQMatch on Seq%d with %dGens, %04dPS, %02dSt, "
+          "./SQMOutNewND/SQMatch on Seq%d with %dGens, %04dPS, %02dSt, "
           " %dTS, %dMuts, %02d%%CuR, %dCE/",
           seqNum, maxGens, popsize, sdaStates, tournSize, numMuts,
           (int)(cullingRate * 100), CULLING_EVERY);
