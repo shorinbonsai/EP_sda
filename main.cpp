@@ -36,13 +36,15 @@ int getArgs(char *arguments[]) {
   cullingRate = stod(arg, &pos);
   arg = arguments[11];
   CULLING_EVERY = stoi(arg, &pos);
+  // arg = arguments[12];
+  // runarg = stoi(arg, &pos);
   cout << "Arguments Captured!" << endl;
   return 0;
 }
 
 int initAlg(const string &pathToSeqs) {
   srand48(seed);  // read the random number seed
-  // vector<vector<int>> sequences = getSequences(pathToSeqs);
+
   goalSeq = getSequences(pathToSeqs)[seqNum];
   seqLen = (int)goalSeq.size();
   fits.resize(popsize);
@@ -129,13 +131,10 @@ int initPop(int run) {
     pop[idx].randomize();
     fits.push_back(fitness(pop[idx]));
   }
-  // for (int i = 0; i < popsize * 2; ++i) {
-  //   noveltyFits.push_back(-1);
-  // }
+  for (int i = 0; i < popsize * 2; ++i) {
+    noveltyFits.push_back(-1);
+  }
 
-  // for (int idx = 0; idx < popsize; ++idx) {
-  //   noveltyFits[idx] = calcNoveltyFit(idx);
-  // }
 
   cout << "Population Generated!" << endl;
   return 0;
@@ -152,7 +151,6 @@ double fitness(SDA &sda) {
   return val;
 }
 
-/*
 int calcNoveltyFit(int idx) {
   int val = 0;
 
@@ -186,21 +184,6 @@ int calcNoveltyFit(int idx) {
   return val;
 }
 
-double updateNoveltyFit(int forIdx, vector<int> cmprStr, int score) {
-  pop[forIdx].fillOutput(testSeq);
-  //int val = noveltyFits[forIdx];
-
-  for (int i = 0; i < goalSeq.size(); ++i) {
-    if (testSeq[i] != goalSeq[i]) {
-      if (testSeq[i] == cmprStr[i]) {
-        val += score;
-      }
-    }
-  }
-
-  return val;
-}
-*/
 
 double diversify(SDA &sda, SDA &best) { return 0.0; }
 
@@ -222,18 +205,13 @@ int calcRelativeFitness() {
       if (BIGGER_BETTER && doubleFits[idx] > doubleFits[opponentIdx]) {
         doubleRelativeFits[idx] += 1.0;
       } else if (doubleFits[idx] == doubleFits[opponentIdx]) {
-        doubleRelativeFits[idx] += 0.5;
+       if (noveltyFits[idx] < noveltyFits[opponentIdx]) {
+         doubleRelativeFits[idx] += 1.0;
+       } else if (noveltyFits[idx] == noveltyFits[opponentIdx]) {
+         doubleRelativeFits[idx] += 0.5;
+       }
       }
-      // else if (doubleFits[idx] == doubleFits[opponentIdx]) {
-      //  if (noveltyFits[idx] < noveltyFits[opponentIdx]) {
-      //    doubleRelativeFits[idx] += 1.0;
-      //  } else if (noveltyFits[idx] == noveltyFits[opponentIdx]) {
-      //    doubleRelativeFits[idx] += 0.5;
-      //  }
-      //}
-      // if (!BIGGER_BETTER && doubleFits[idx] < doubleFits[opponentIdx]) {
-      //   doubleRelativeFits[idx] += 1.0;
-      // }
+
     }
   }
 
@@ -323,9 +301,9 @@ int matingEvent(bool biggerBetter, double cullingRate, int generation,
     doublePop.push_back(child1);
     doubleFits.push_back(fitness(child1));
   }
-  // for (int i = 0; i < popsize * 2; ++i) {
-  //   noveltyFits[i] = calcNoveltyFit(i);
-  // }
+  for (int i = 0; i < popsize * 2; ++i) {
+    noveltyFits[i] = calcNoveltyFit(i);
+  }
 
   calcRelativeFitness();
 
@@ -341,12 +319,12 @@ int matingEvent(bool biggerBetter, double cullingRate, int generation,
     vector<SDA> sortedDoublePop;
     vector<double> sortedDoubleFits;
     vector<double> sortedDoubleRelativeFits;
-    // vector<int> sortedNoveltyFits;
+    vector<int> sortedNoveltyFits;
     for (int idx : indices) {
       sortedDoublePop.push_back(doublePop[idx]);
       sortedDoubleFits.push_back(doubleFits[idx]);
       sortedDoubleRelativeFits.push_back(doubleRelativeFits[idx]);
-      // sortedNoveltyFits.push_back(noveltyFits[idx]);
+      sortedNoveltyFits.push_back(noveltyFits[idx]);
     }
     doublePop = sortedDoublePop;
     doubleFits = sortedDoubleFits;
@@ -366,42 +344,22 @@ int matingEvent(bool biggerBetter, double cullingRate, int generation,
         if (i != 0) tournStats << ", ";
         tournStats << doubleFits[i];
       }
-      // tournStats << "\nNoveltyFits\n";
-      // for (int i = 0; i < sortedNoveltyFits.size(); ++i) {
-      //   if (i != 0) tournStats << ", ";
-      //   tournStats << sortedNoveltyFits[i];
-      // }
+      tournStats << "\nNoveltyFits\n";
+      for (int i = 0; i < sortedNoveltyFits.size(); ++i) {
+        if (i != 0) tournStats << ", ";
+        tournStats << sortedNoveltyFits[i];
+      }
       tournStats << "\n\n";
     }
 
     selectByRank();
-    // relativeFits.clear();
-    // relativeFits.resize(popsize);
-    // for (int idx = 0; idx < popsize; ++idx) {
-    //   relativeFits[idx] = doubleRelativeFits[idx];
-    // }
+
     if (cullingRate > 0.0) {
-      // Write to tournStats
-      // tournStats << "Culling Event at Generation " << generation << "\n";
-      // tournStats << "Double Relative Fitness Values: ";
-      // for (int i = 0; i < relativeFits.size(); ++i) {
-      //   if (i != 0) tournStats << ", ";
-      //   tournStats << relativeFits[i];
-      // }
-      // double avg = accumulate(relativeFits.begin(), relativeFits.end(), 0.0)
-      // /
-      //              relativeFits.size();
-      // tournStats << "\nAverage: " << avg << "\n";
-      // for (int i = 0; i < fits.size(); ++i) {
-      //   if (i != 0) tournStats << ", ";
-      //   tournStats << fits[i];
-      // }
-      // tournStats << "\n\n";
+
       culling(cullingRate, BIGGER_BETTER);
     }
   }
 
-  // Create a vector of indices
   return 0;
 }
 
@@ -454,7 +412,7 @@ int selectByRank() {
   pop.resize(popsize);
   copy(doubleFits.begin(), doubleFits.begin() + popsize, fits.begin());
   copy(doublePop.begin(), doublePop.begin() + popsize, pop.begin());
-  // copy(doublePop.begin(), doublePop.begin() + popsize, pop);
+
   return 0;
 }
 
@@ -663,20 +621,21 @@ int main(int argc, char *argv[]) {
 
   initAlg(pathToSeqs);
   SDA expBestSDA = SDA(sdaStates, numChars, 2, seqLen, 1.5 * sdaStates);
-  cmdLineIntro(cout);
-  char dynamicMessage[20];
-  sprintf(pathToOut,
-          "./SQMOutNewND/SQMatch on Seq%d with %dGens, %04dPS, %02dSt, "
-          " %dTS, %dMuts, %02d%%CuR, %dCE/",
-          seqNum, maxGens, popsize, sdaStates, tournSize, numMuts,
-          (int)(cullingRate * 100), CULLING_EVERY);
-  filesystem::create_directories(pathToOut);
-  expStats.open(string(pathToOut) + "./exp.dat", ios::out);
-  readMe.open(string(pathToOut) + "./read.me", ios::out);
-  makeReadMe(readMe);
-  readMe.close();
+    cmdLineIntro(cout);
+    char dynamicMessage[20];
+    sprintf(pathToOut,
+      "./parallel/SQMatch on Seq%d with %dGens, %04dPS, %02dSt, "
+      " %dTS, %dMuts, %02d%%CuR, %dCE/",
+      seqNum, maxGens, popsize, sdaStates, tournSize, numMuts,
+      (int)(cullingRate * 100), CULLING_EVERY);
+    filesystem::create_directories(pathToOut);
+    expStats.open(string(pathToOut) + "./exp.dat", ios::out);
+    readMe.open(string(pathToOut) + "./read.me", ios::out);
+    makeReadMe(readMe);
+    readMe.close();
 
-  int tmp;
+    int tmp;
+  // for (int run = runarg; run < runarg + 1; ++run) {
   for (int run = 1; run < runs + 1; ++run) {
     initPop(run);
     char runNumStr[20];

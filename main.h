@@ -48,6 +48,7 @@ int populationBestIdx;
 double populationBestFit;  // current best population fitness
 double prevBestFitness = 0;
 int RICounter;  // Report Interval counter
+// int runarg;
 
 vector<int> goalSeq;
 vector<int> testSeq;
@@ -61,7 +62,7 @@ vector<double> fits;
 vector<double> doubleFits;
 vector<double> relativeFits;
 vector<double> doubleRelativeFits;
-//vector<int> noveltyFits;
+vector<int> noveltyFits;
 
 char pathToOut[150];
 
